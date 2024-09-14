@@ -1,36 +1,32 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type (
-	DirectionEnum int
-	ShapeEnum     int
-	LineTypeEnum  int
-	ArrowTypeEnum int
+	FlowchartDirectionEnum int
+	NodeTypeEnum           int
+	LineTypeEnum           int
+	ArrowTypeEnum          int
 )
 
 const (
-	DirectionHorizontalRight DirectionEnum = iota
+	DirectionHorizontalRight FlowchartDirectionEnum = iota
 	DirectionHorizontalLeft
 	DirectionVertical
 )
 
 const (
-	ShapeRectangle ShapeEnum = iota
-	ShapeRoundEdge
-	ShapeStadium
-	ShapeSubroutine
-	ShapeCylinder
-	ShapeCircle
-	ShapeAsymmetric
-	ShapeDiamond
-	ShapeRhombus
-	ShapeHexagon
-	ShapeParallelogram
-	ShapeAltParallelogram
-	ShapeTrapezoid
-	ShapeAltTrapezoid
-	ShapeDoubleCircle
+	ShapeTerminator NodeTypeEnum = iota
+	ShapeProcess
+	ShapeAlternateProcess
+	ShapeSubprocess
+	ShapeDecision
+	ShapeInputOutput
+	ShapeConnector
+	ShapeDatabase
 )
 
 const (
@@ -57,28 +53,34 @@ type Link struct {
 
 type Node struct {
 	Name  string
-	Shape ShapeEnum
+	Type  NodeTypeEnum
 	Label *string
 	Links []Link
 }
 
 type Flowchart struct {
-	Direction DirectionEnum
+	Direction FlowchartDirectionEnum
 	Title     *string
 	Nodes     []*Node
 	Subgraphs []*Flowchart
 }
 
-func (n Node) addLink(link Link) {
+func (n *Node) addLink(link Link) error {
+	if link.TargetNode == nil {
+		return fmt.Errorf("cannot add link with no target node")
+	}
 	n.Links = append(n.Links, link)
+	return nil
 }
 
-func (f Flowchart) addNode(node *Node) {
+func (f *Flowchart) addNode(node *Node) error {
 	f.Nodes = append(f.Nodes, node)
+	return nil
 }
 
-func (f Flowchart) addSubgraph(subgraph *Flowchart) {
+func (f *Flowchart) addSubgraph(subgraph *Flowchart) error {
 	f.Subgraphs = append(f.Subgraphs, subgraph)
+	return nil
 }
 
 func BasicLink(targetNode *Node, label *string) (Link, error) {
@@ -97,7 +99,7 @@ func BasicLink(targetNode *Node, label *string) (Link, error) {
 func BasicNode(name string, label *string) *Node {
 	return &Node{
 		Name:  name,
-		Shape: ShapeRectangle,
+		Type:  ShapeProcess,
 		Label: label,
 		Links: make([]Link, 0),
 	}

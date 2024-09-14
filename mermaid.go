@@ -1,5 +1,148 @@
 package main
 
+import (
+	"fmt"
+	"strings"
+)
+
+func (a ArrowTypeEnum) toMermaidOrigin() string {
+	if a == ArrowTypeNormal {
+		return "<"
+	}
+	return a.toMermaidBidirectional()
+}
+
+func (a ArrowTypeEnum) toMermaidTarget() string {
+	if a == ArrowTypeNormal {
+		return ">"
+	}
+	return a.toMermaidBidirectional()
+}
+
+func (a ArrowTypeEnum) toMermaidBidirectional() string {
+	switch a {
+	case ArrowTypeNone:
+		return ""
+	case ArrowTypeCross:
+		return "x"
+	case ArrowTypeCircle:
+		return "o"
+	default:
+		return ""
+	}
+}
+
+func (l LineTypeEnum) toMermaidOrigin() string {
+	if l == LineTypeDotted {
+		return "-."
+	}
+	return l.toMermaidBidirectional()
+}
+
+func (l LineTypeEnum) toMermaidTarget() string {
+	if l == LineTypeDotted {
+		return ".-"
+	}
+	return l.toMermaidBidirectional()
+}
+
+func (l LineTypeEnum) toMermaidBidirectional() string {
+	switch l {
+	case LineTypeNone:
+		return "~~~"
+	case LineTypeSolid:
+		return "--"
+	case LineTypeDotted:
+		return "-.-"
+	case LineTypeThick:
+		return "=="
+	default:
+		return ""
+	}
+}
+
+func (n NodeTypeEnum) toMermaidLeft() string {
+	switch n {
+	case ShapeTerminator:
+		return "("
+	case ShapeProcess:
+		return "["
+	case ShapeAlternateProcess:
+		return "(["
+	case ShapeSubprocess:
+		return "[["
+	case ShapeDecision:
+		return "{"
+	case ShapeInputOutput:
+		return "[/"
+	case ShapeConnector:
+		return "(("
+	case ShapeDatabase:
+		return "[("
+	default:
+		return "("
+	}
+}
+
+func (n NodeTypeEnum) toMermaidRight() string {
+	switch n {
+	case ShapeTerminator:
+		return ")"
+	case ShapeProcess:
+		return "]"
+	case ShapeAlternateProcess:
+		return "])"
+	case ShapeSubprocess:
+		return "]]"
+	case ShapeDecision:
+		return "}"
+	case ShapeInputOutput:
+		return "/["
+	case ShapeConnector:
+		return "))"
+	case ShapeDatabase:
+		return ")]"
+	default:
+		return "}"
+	}
+}
+
+func (l Link) toMermaid() string {
+	originArrow := l.OriginArrow.toMermaidOrigin()
+	targetArrow := l.TargetArrow.toMermaidTarget()
+	line := l.LineType.toMermaidBidirectional()
+
+	if l.Label != nil && *l.Label != "" {
+		line = l.LineType.toMermaidOrigin() + " " + *l.Label + " " + l.LineType.toMermaidTarget()
+	}
+
+	return originArrow + line + targetArrow + " " + l.TargetNode.Name
+}
+
+func (n *Node) toMermaid(indents int) string {
+	indentSpaces := strings.Repeat(" ", 4*indents)
+	var sb strings.Builder
+
+	if n.Label != nil && *n.Label != "" {
+		sb.WriteString(fmt.Sprintf("%s%s%s%s%s;\n",
+			indentSpaces,
+			n.Name,
+			n.Type.toMermaidLeft(),
+			*n.Label,
+			n.Type.toMermaidRight(),
+		))
+	}
+	for _, link := range n.Links {
+		sb.WriteString(fmt.Sprintf("%s%s%s;\n",
+			indentSpaces,
+			n.Name,
+			link.toMermaid(),
+		))
+	}
+
+	return sb.String()
+}
+
 //
 //import "errors"
 //

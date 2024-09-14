@@ -2,9 +2,62 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"testing"
 )
+
+func TestNodeAddLink(t *testing.T) {
+	tests := []struct {
+		name          string
+		node          Node
+		link          Link
+		expectedErr   error
+		expectedLinks []Link
+	}{
+		{
+			name: "Add valid link",
+			node: Node{Name: "StartNode", Links: []Link{}},
+			link: Link{
+				TargetNode: &Node{Name: "TargetNode"},
+				Label:      pointTo("LinkLabel"),
+			},
+			expectedErr: nil,
+			expectedLinks: []Link{
+				{
+					TargetNode: &Node{Name: "TargetNode"},
+					Label:      pointTo("LinkLabel"),
+				},
+			},
+		},
+		{
+			name: "Add invalid link with nil TargetNode",
+			node: Node{Name: "StartNode", Links: []Link{}},
+			link: Link{
+				TargetNode: nil,
+				Label:      nil,
+			},
+			expectedErr:   fmt.Errorf("cannot add link with no target node"),
+			expectedLinks: []Link{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.node.addLink(tt.link)
+
+			// Error check using cmp.Diff
+			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
+				t.Errorf("addLink() error mismatch (-want +got):\n%s", diff)
+			}
+
+			// Link check using cmp.Diff
+			if diff := cmp.Diff(tt.expectedLinks, tt.node.Links); diff != "" {
+				t.Errorf("addLink() Links mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
 
 func TestBasicLink(t *testing.T) {
 	tests := []struct {
@@ -16,10 +69,10 @@ func TestBasicLink(t *testing.T) {
 	}{
 		{
 			name:       "Valid target node with nil label",
-			targetNode: &Node{Name: "Node1", Shape: ShapeRectangle},
+			targetNode: &Node{Name: "Node1", Type: ShapeProcess},
 			label:      nil,
 			expected: Link{
-				TargetNode:  &Node{Name: "Node1", Shape: ShapeRectangle},
+				TargetNode:  &Node{Name: "Node1", Type: ShapeProcess},
 				LineType:    LineTypeSolid,
 				OriginArrow: ArrowTypeNone,
 				TargetArrow: ArrowTypeNormal,
@@ -29,10 +82,10 @@ func TestBasicLink(t *testing.T) {
 		},
 		{
 			name:       "Valid target node with label",
-			targetNode: &Node{Name: "Node2", Shape: ShapeCircle},
+			targetNode: &Node{Name: "Node2", Type: ShapeDecision},
 			label:      pointTo("Link Label"),
 			expected: Link{
-				TargetNode:  &Node{Name: "Node2", Shape: ShapeCircle},
+				TargetNode:  &Node{Name: "Node2", Type: ShapeDecision},
 				LineType:    LineTypeSolid,
 				OriginArrow: ArrowTypeNone,
 				TargetArrow: ArrowTypeNormal,
@@ -79,7 +132,7 @@ func TestBasicNode(t *testing.T) {
 			label:    nil,
 			expected: &Node{
 				Name:  "TestNode1",
-				Shape: ShapeRectangle,
+				Type:  ShapeProcess,
 				Label: nil,
 				Links: []Link{},
 			},
@@ -90,7 +143,7 @@ func TestBasicNode(t *testing.T) {
 			label:    pointTo("Node Label"),
 			expected: &Node{
 				Name:  "TestNode2",
-				Shape: ShapeRectangle,
+				Type:  ShapeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{},
 			},
