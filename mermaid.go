@@ -13,9 +13,9 @@ func (f FlowchartDirectionEnum) toMermaid() string {
 	case DirectionHorizontalLeft:
 		return "RL"
 	case DirectionVertical:
-		return "TD"
+		return "TB"
 	}
-	return "TD"
+	return "TB"
 }
 
 func (a ArrowTypeEnum) toMermaidOrigin() string {
@@ -86,21 +86,21 @@ func (l LineTypeEnum) toMermaidBidirectional() string {
 
 func (n NodeTypeEnum) toMermaidLeft() string {
 	switch n {
-	case ShapeTerminator:
+	case TypeTerminator:
 		return "("
-	case ShapeProcess:
+	case TypeProcess:
 		return "["
-	case ShapeAlternateProcess:
+	case TypeAlternateProcess:
 		return "(["
-	case ShapeSubprocess:
+	case TypeSubprocess:
 		return "[["
-	case ShapeDecision:
+	case TypeDecision:
 		return "{"
-	case ShapeInputOutput:
+	case TypeInputOutput:
 		return "[/"
-	case ShapeConnector:
+	case TypeConnector:
 		return "(("
-	case ShapeDatabase:
+	case TypeDatabase:
 		return "[("
 	default:
 		return "("
@@ -109,21 +109,21 @@ func (n NodeTypeEnum) toMermaidLeft() string {
 
 func (n NodeTypeEnum) toMermaidRight() string {
 	switch n {
-	case ShapeTerminator:
+	case TypeTerminator:
 		return ")"
-	case ShapeProcess:
+	case TypeProcess:
 		return "]"
-	case ShapeAlternateProcess:
+	case TypeAlternateProcess:
 		return "])"
-	case ShapeSubprocess:
+	case TypeSubprocess:
 		return "]]"
-	case ShapeDecision:
+	case TypeDecision:
 		return "}"
-	case ShapeInputOutput:
+	case TypeInputOutput:
 		return "/["
-	case ShapeConnector:
+	case TypeConnector:
 		return "))"
-	case ShapeDatabase:
+	case TypeDatabase:
 		return ")]"
 	default:
 		return "}"
@@ -172,6 +172,22 @@ func (n *Node) toMermaidNode(indents int) string {
 	return sb.String()
 }
 
+func (f *Flowchart) toMermaid(indents int) string {
+	var sb strings.Builder
+
+	// nodes
+	for _, node := range f.Nodes {
+		sb.WriteString(fmt.Sprintf("\n%s", node.toMermaidNode(indents)))
+	}
+
+	// subgraphs
+	for _, subgraph := range f.Subgraphs {
+		sb.WriteString(fmt.Sprintf("\n%s", subgraph.toMermaidSubgraph(indents)))
+	}
+
+	return sb.String()
+}
+
 func (f *Flowchart) toMermaidSubgraph(indents int) string {
 	indentSpaces := strings.Repeat(" ", 4*indents)
 	var sb strings.Builder
@@ -197,18 +213,23 @@ func (f *Flowchart) toMermaidSubgraph(indents int) string {
 		f.Direction.toMermaid(),
 	))
 
-	// nodes
-	for _, node := range f.Nodes {
-		sb.WriteString(fmt.Sprintf("\n%s", node.toMermaidNode(indents+1)))
-	}
-
-	// subgraphs
-	for _, subgraph := range f.Subgraphs {
-		sb.WriteString(fmt.Sprintf("\n%s", subgraph.toMermaidSubgraph(indents+1)))
-	}
+	sb.WriteString(f.toMermaid(indents + 1))
 
 	// end subgraph
 	sb.WriteString(fmt.Sprintf("%send;\n", indentSpaces))
+
+	return sb.String()
+}
+
+func (f *Flowchart) ToMermaid() string {
+	var sb strings.Builder
+
+	if f.Title != nil && *f.Title != "" {
+		sb.WriteString(fmt.Sprintf("---\ntitle: %s\n---\n", *f.Title))
+	}
+
+	sb.WriteString(fmt.Sprintf("flowchart %s;\n", f.Direction.toMermaid()))
+	sb.WriteString(f.toMermaid(1))
 
 	return sb.String()
 }

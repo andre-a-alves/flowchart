@@ -19,14 +19,14 @@ const (
 )
 
 const (
-	ShapeTerminator NodeTypeEnum = iota
-	ShapeProcess
-	ShapeAlternateProcess
-	ShapeSubprocess
-	ShapeDecision
-	ShapeInputOutput
-	ShapeConnector
-	ShapeDatabase
+	TypeTerminator NodeTypeEnum = iota
+	TypeProcess
+	TypeAlternateProcess
+	TypeSubprocess
+	TypeDecision
+	TypeInputOutput
+	TypeConnector
+	TypeDatabase
 )
 
 const (
@@ -99,7 +99,7 @@ func BasicLink(targetNode *Node, label *string) (Link, error) {
 func BasicNode(name string, label *string) *Node {
 	return &Node{
 		Name:  name,
-		Type:  ShapeProcess,
+		Type:  TypeProcess,
 		Label: label,
 		Links: make([]Link, 0),
 	}

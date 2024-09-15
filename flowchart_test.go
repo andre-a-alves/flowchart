@@ -69,10 +69,10 @@ func TestBasicLink(t *testing.T) {
 	}{
 		{
 			name:       "Valid target node with nil label",
-			targetNode: &Node{Name: "Node1", Type: ShapeProcess},
+			targetNode: &Node{Name: "Node1", Type: TypeProcess},
 			label:      nil,
 			expected: Link{
-				TargetNode:  &Node{Name: "Node1", Type: ShapeProcess},
+				TargetNode:  &Node{Name: "Node1", Type: TypeProcess},
 				LineType:    LineTypeSolid,
 				OriginArrow: ArrowTypeNone,
 				TargetArrow: ArrowTypeNormal,
@@ -82,10 +82,10 @@ func TestBasicLink(t *testing.T) {
 		},
 		{
 			name:       "Valid target node with label",
-			targetNode: &Node{Name: "Node2", Type: ShapeDecision},
+			targetNode: &Node{Name: "Node2", Type: TypeDecision},
 			label:      pointTo("Link Label"),
 			expected: Link{
-				TargetNode:  &Node{Name: "Node2", Type: ShapeDecision},
+				TargetNode:  &Node{Name: "Node2", Type: TypeDecision},
 				LineType:    LineTypeSolid,
 				OriginArrow: ArrowTypeNone,
 				TargetArrow: ArrowTypeNormal,
@@ -132,7 +132,7 @@ func TestBasicNode(t *testing.T) {
 			label:    nil,
 			expected: &Node{
 				Name:  "TestNode1",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: nil,
 				Links: []Link{},
 			},
@@ -143,7 +143,7 @@ func TestBasicNode(t *testing.T) {
 			label:    pointTo("Node Label"),
 			expected: &Node{
 				Name:  "TestNode2",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{},
 			},

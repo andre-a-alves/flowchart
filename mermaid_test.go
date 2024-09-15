@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"strings"
+	"regexp"
 	"testing"
 )
 
@@ -25,12 +25,12 @@ func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 		{
 			name:      "Direction vertical",
 			direction: DirectionVertical,
-			expected:  "TD",
+			expected:  "TB",
 		},
 		{
 			name:      "Unknown direction (fallback)",
 			direction: FlowchartDirectionEnum(999), // Unknown value to test fallback
-			expected:  "TD",                        // Default fallback
+			expected:  "TB",                        // Default fallback
 		},
 	}
 
@@ -277,42 +277,42 @@ func TestNodeTypeEnum_toMermaidLeft(t *testing.T) {
 	}{
 		{
 			name:     "Terminator left",
-			nodeType: ShapeTerminator,
+			nodeType: TypeTerminator,
 			expected: "(",
 		},
 		{
 			name:     "Process left",
-			nodeType: ShapeProcess,
+			nodeType: TypeProcess,
 			expected: "[",
 		},
 		{
 			name:     "AlternateProcess left",
-			nodeType: ShapeAlternateProcess,
+			nodeType: TypeAlternateProcess,
 			expected: "([",
 		},
 		{
 			name:     "Subprocess left",
-			nodeType: ShapeSubprocess,
+			nodeType: TypeSubprocess,
 			expected: "[[",
 		},
 		{
 			name:     "Decision left",
-			nodeType: ShapeDecision,
+			nodeType: TypeDecision,
 			expected: "{",
 		},
 		{
 			name:     "InputOutput left",
-			nodeType: ShapeInputOutput,
+			nodeType: TypeInputOutput,
 			expected: "[/",
 		},
 		{
 			name:     "Connector left",
-			nodeType: ShapeConnector,
+			nodeType: TypeConnector,
 			expected: "((",
 		},
 		{
 			name:     "Database left",
-			nodeType: ShapeDatabase,
+			nodeType: TypeDatabase,
 			expected: "[(",
 		},
 		{
@@ -341,42 +341,42 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 	}{
 		{
 			name:     "Terminator right",
-			nodeType: ShapeTerminator,
+			nodeType: TypeTerminator,
 			expected: ")",
 		},
 		{
 			name:     "Process right",
-			nodeType: ShapeProcess,
+			nodeType: TypeProcess,
 			expected: "]",
 		},
 		{
 			name:     "AlternateProcess right",
-			nodeType: ShapeAlternateProcess,
+			nodeType: TypeAlternateProcess,
 			expected: "])",
 		},
 		{
 			name:     "Subprocess right",
-			nodeType: ShapeSubprocess,
+			nodeType: TypeSubprocess,
 			expected: "]]",
 		},
 		{
 			name:     "Decision right",
-			nodeType: ShapeDecision,
+			nodeType: TypeDecision,
 			expected: "}",
 		},
 		{
 			name:     "InputOutput right",
-			nodeType: ShapeInputOutput,
+			nodeType: TypeInputOutput,
 			expected: "/[",
 		},
 		{
 			name:     "Connector right",
-			nodeType: ShapeConnector,
+			nodeType: TypeConnector,
 			expected: "))",
 		},
 		{
 			name:     "Database right",
-			nodeType: ShapeDatabase,
+			nodeType: TypeDatabase,
 			expected: ")]",
 		},
 		{
@@ -497,7 +497,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with no label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: nil,
 				Links: nil,
 			},
@@ -508,7 +508,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with empty label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: pointTo(""),
 				Links: nil,
 			},
@@ -519,7 +519,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: pointTo("Node Label"),
 				Links: nil,
 			},
@@ -530,7 +530,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with links and no label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: nil,
 				Links: []Link{
 					{
@@ -540,7 +540,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node",
-							Type:  ShapeProcess,
+							Type:  TypeProcess,
 							Label: pointTo("ignored node label"),
 							Links: nil,
 						},
@@ -554,7 +554,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with links and label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: pointTo("Label"),
 				Links: []Link{
 					{
@@ -564,7 +564,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node",
-							Type:  ShapeProcess,
+							Type:  TypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -577,7 +577,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with multiple links and label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  ShapeProcess,
+				Type:  TypeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{
 					{
@@ -587,7 +587,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node One",
-							Type:  ShapeProcess,
+							Type:  TypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -599,7 +599,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node Two",
-							Type:  ShapeProcess,
+							Type:  TypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -651,7 +651,7 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 				Subgraphs: []*Flowchart{},
 			},
 			indents:  1,
-			expected: "    subgraph MainTitle [Main Title];\n        direction TD;\n\n        FirstNode;\n\n        SecondNode;\n    end;\n",
+			expected: "    subgraph MainTitle [Main Title];\n        direction TB;\n\n        FirstNode;\n\n        SecondNode;\n    end;\n",
 		},
 		{
 			name: "Flowchart with subgraphs",
@@ -674,7 +674,7 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 			},
 			indents: 0,
 			expected: `subgraph MainTitle [Main Title];
-    direction TD;
+    direction TB;
 
     FirstNode;
 
@@ -698,7 +698,7 @@ end;
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.flowchart.toMermaidSubgraph(tt.indents)
 			if tt.flowchart.Title == nil {
-				if diff := cmp.Diff(tt.expected, got, cmp.Comparer(ignoreUUIDInSubgraph)); diff != "" {
+				if diff := cmp.Diff(maskUUIDsInSubgraph(tt.expected), maskUUIDsInSubgraph(got)); diff != "" {
 					t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
 				}
 			} else {
@@ -710,9 +710,132 @@ end;
 	}
 }
 
-func ignoreUUIDInSubgraph(x, y string) bool {
-	xIndex := strings.Index(x, "subgraph ")
-	yIndex := strings.Index(y, "subgraph ")
+func TestFlowchart_ToMermaid(t *testing.T) {
+	tests := []struct {
+		name      string
+		flowchart *Flowchart
+		expected  string
+	}{
+		{
+			name: "Flowchart with no title",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     nil,
+				Nodes:     []*Node{{Name: "Node One"}},
+				Subgraphs: nil,
+			},
+			expected: "flowchart LR;\n\n    NodeOne;\n",
+		},
+		{
+			name:      "Full Flowchart with title",
+			flowchart: fixtureFlowchart(),
+			expected: `---
+title: Test Title
+---
+flowchart LR;
 
-	return xIndex == yIndex && x[0:xIndex+1] == y[0:yIndex+1] && x[xIndex+16:] == y[yIndex+16:]
+    NodeOne;
+    NodeOne --> NodeTwo;
+
+    NodeTwo;
+    NodeTwo --> NodeThree;
+    NodeTwo --> NodeFour;
+
+    NodeThree;
+
+    NodeFour;
+
+    subgraph 123456;
+        direction TB;
+
+        NodeFive;
+        NodeFive --> NodeSix;
+
+        NodeSix;
+
+        subgraph 123456;
+            direction RL;
+
+            NodeSeven;
+            NodeSeven --> NodeEight;
+
+            NodeEight;
+        end;
+    end;
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.flowchart.ToMermaid()
+			if diff := cmp.Diff(maskUUIDsInSubgraph(tt.expected), maskUUIDsInSubgraph(got)); diff != "" {
+				t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func fixtureFlowchart() *Flowchart {
+	nodeOne := BasicNode("Node One", nil)
+	nodeTwo := BasicNode("Node Two", nil)
+	nodeThree := BasicNode("Node Three", nil)
+	nodeFour := BasicNode("Node Four", nil)
+	nodeFive := BasicNode("Node Five", nil)
+	nodeSix := BasicNode("Node Six", nil)
+	nodeSeven := BasicNode("Node Seven", nil)
+	nodeEight := BasicNode("Node Eight", nil)
+
+	nodeOneLink, err := BasicLink(nodeTwo, nil)
+	if err != nil {
+		panic(err)
+	}
+	nodeTwoLinkOne, err := BasicLink(nodeThree, nil)
+	if err != nil {
+		panic(err)
+	}
+	nodeTwoLinkTwo, err := BasicLink(nodeFour, nil)
+	if err != nil {
+		panic(err)
+	}
+	nodeFiveLink, err := BasicLink(nodeSix, nil)
+	if err != nil {
+		panic(err)
+	}
+	nodeSevenLink, err := BasicLink(nodeEight, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	nodeOne.Links = []Link{nodeOneLink}
+	nodeTwo.Links = []Link{nodeTwoLinkOne, nodeTwoLinkTwo}
+	nodeFive.Links = []Link{nodeFiveLink}
+	nodeSeven.Links = []Link{nodeSevenLink}
+
+	return &Flowchart{
+		Direction: DirectionHorizontalRight,
+		Title:     pointTo("Test Title"),
+		Nodes:     []*Node{nodeOne, nodeTwo, nodeThree, nodeFour},
+		Subgraphs: []*Flowchart{
+			{
+				Direction: DirectionVertical,
+				Nodes:     []*Node{nodeFive, nodeSix},
+				Subgraphs: []*Flowchart{
+					{
+						Direction: DirectionHorizontalLeft,
+						Nodes:     []*Node{nodeSeven, nodeEight},
+					},
+				},
+			},
+		},
+	}
+}
+
+// Helper function to mask UUIDs in a string after each subgraph
+func maskUUIDsInSubgraph(s string) string {
+	// Regular expression to match the "subgraph " followed by 6 characters (UUID)
+	re := regexp.MustCompile(`subgraph \w{6}`)
+
+	// Replace each "subgraph " followed by the 6-character UUID with "subgraph UUID"
+	return re.ReplaceAllString(s, "subgraph UUID")
 }
