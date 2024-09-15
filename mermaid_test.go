@@ -2,10 +2,49 @@ package main
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"strings"
 	"testing"
 )
 
-func TestArrowTypeEnum_ToMermaidOriginString(t *testing.T) {
+func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
+	tests := []struct {
+		name      string
+		direction FlowchartDirectionEnum
+		expected  string
+	}{
+		{
+			name:      "Direction horizontal - right",
+			direction: DirectionHorizontalRight,
+			expected:  "LR",
+		},
+		{
+			name:      "Direction horizontal - left",
+			direction: DirectionHorizontalLeft,
+			expected:  "RL",
+		},
+		{
+			name:      "Direction vertical",
+			direction: DirectionVertical,
+			expected:  "TD",
+		},
+		{
+			name:      "Unknown direction (fallback)",
+			direction: FlowchartDirectionEnum(999), // Unknown value to test fallback
+			expected:  "TD",                        // Default fallback
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.direction.toMermaid()
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestArrowTypeEnum_toMermaidOriginString(t *testing.T) {
 	tests := []struct {
 		name     string
 		arrow    ArrowTypeEnum
@@ -50,7 +89,7 @@ func TestArrowTypeEnum_ToMermaidOriginString(t *testing.T) {
 	}
 }
 
-func TestArrowTypeEnum_ToMermaidTargetString(t *testing.T) {
+func TestArrowTypeEnum_toMermaidTargetString(t *testing.T) {
 	tests := []struct {
 		name     string
 		arrow    ArrowTypeEnum
@@ -95,7 +134,7 @@ func TestArrowTypeEnum_ToMermaidTargetString(t *testing.T) {
 	}
 }
 
-func TestLineTypeEnum_ToMermaidOrigin(t *testing.T) {
+func TestLineTypeEnum_toMermaidOrigin(t *testing.T) {
 	tests := []struct {
 		name     string
 		lineType LineTypeEnum
@@ -140,7 +179,7 @@ func TestLineTypeEnum_ToMermaidOrigin(t *testing.T) {
 	}
 }
 
-func TestLineTypeEnum_ToMermaidTarget(t *testing.T) {
+func TestLineTypeEnum_toMermaidTarget(t *testing.T) {
 	tests := []struct {
 		name     string
 		lineType LineTypeEnum
@@ -185,7 +224,7 @@ func TestLineTypeEnum_ToMermaidTarget(t *testing.T) {
 	}
 }
 
-func TestLineTypeEnum_ToMermaidBidirectional(t *testing.T) {
+func TestLineTypeEnum_toMermaidBidirectional(t *testing.T) {
 	tests := []struct {
 		name     string
 		lineType LineTypeEnum
@@ -209,7 +248,7 @@ func TestLineTypeEnum_ToMermaidBidirectional(t *testing.T) {
 		{
 			name:     "No line",
 			lineType: LineTypeNone,
-			expected: "",
+			expected: "~~~",
 		},
 		{
 			name:     "Invalid line type",
@@ -361,7 +400,7 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 func TestLink_toMermaid(t *testing.T) {
 	fixtureLabelText := "label"
 	fixtureEmptyLabel := ""
-	fixtureTargetNode := Node{Name: "TargetNode"}
+	fixtureTargetNode := Node{Name: "Target Node"}
 
 	tests := []struct {
 		name     string
@@ -423,6 +462,17 @@ func TestLink_toMermaid(t *testing.T) {
 			},
 			expected: "o-. label .-x TargetNode",
 		},
+		{
+			name: "Link with no line",
+			link: Link{
+				OriginArrow: ArrowTypeNormal,
+				LineType:    LineTypeNone,
+				TargetArrow: ArrowTypeNormal,
+				Label:       &fixtureLabelText,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "~~~ TargetNode",
+		},
 	}
 
 	for _, tt := range tests {
@@ -430,23 +480,13 @@ func TestLink_toMermaid(t *testing.T) {
 			got := tt.link.toMermaid()
 
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
+				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestNode_toMermaid(t *testing.T) {
-	// Helper function to create nodes and links for testing
-	createNode := func(name string, label *string, links []Link) *Node {
-		return &Node{
-			Name:  name,
-			Type:  ShapeProcess, // Default type for simplicity
-			Label: label,
-			Links: links,
-		}
-	}
-
+func TestNode_toMermaidNode(t *testing.T) {
 	tests := []struct {
 		name     string
 		node     *Node
@@ -454,387 +494,225 @@ func TestNode_toMermaid(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Node with no label and no links",
-			node:     createNode("Node1", nil, nil),
+			name: "Node with no label and no links",
+			node: &Node{
+				Name:  "First Node",
+				Type:  ShapeProcess,
+				Label: nil,
+				Links: nil,
+			},
 			indents:  0,
-			expected: "Node1\n",
+			expected: "FirstNode;\n",
 		},
 		{
-			name:     "Node with empty label and no links",
-			node:     createNode("Node2", pointTo(""), nil),
+			name: "Node with empty label and no links",
+			node: &Node{
+				Name:  "First Node",
+				Type:  ShapeProcess,
+				Label: pointTo(""),
+				Links: nil,
+			},
 			indents:  1,
-			expected: "    Node2\n",
+			expected: "    FirstNode;\n",
 		},
 		{
-			name:     "Node with label and no links",
-			node:     createNode("Node3", pointTo("Label"), nil),
+			name: "Node with label and no links",
+			node: &Node{
+				Name:  "First Node",
+				Type:  ShapeProcess,
+				Label: pointTo("Node Label"),
+				Links: nil,
+			},
 			indents:  2,
-			expected: "        Node3[Label]\n",
+			expected: "        FirstNode[Node Label];\n",
 		},
 		{
 			name: "Node with links and no label",
-			node: createNode("Node4", nil, []Link{
-				{OriginArrow: ArrowTypeNormal, LineType: LineTypeSolid, TargetArrow: ArrowTypeNone, Label: nil, TargetNode: createNode("Node5", nil, nil)},
-			}),
+			node: &Node{
+				Name:  "First Node",
+				Type:  ShapeProcess,
+				Label: nil,
+				Links: []Link{
+					{
+						OriginArrow: ArrowTypeNormal,
+						LineType:    LineTypeSolid,
+						TargetArrow: ArrowTypeNone,
+						Label:       nil,
+						TargetNode: &Node{
+							Name:  "Target Node",
+							Type:  ShapeProcess,
+							Label: pointTo("ignored node label"),
+							Links: nil,
+						},
+					},
+				},
+			},
 			indents:  0,
-			expected: "Node4-- TargetNode\n",
+			expected: "FirstNode;\nFirstNode <-- TargetNode;\n",
 		},
 		{
 			name: "Node with links and label",
-			node: createNode("Node6", pointTo("Label"), []Link{
-				{OriginArrow: ArrowTypeNormal, LineType: LineTypeDotted, TargetArrow: ArrowTypeCross, Label: pointTo("LinkLabel"), TargetNode: createNode("Node7", nil, nil)},
-			}),
+			node: &Node{
+				Name:  "First Node",
+				Type:  ShapeProcess,
+				Label: pointTo("Label"),
+				Links: []Link{
+					{
+						OriginArrow: ArrowTypeNormal,
+						LineType:    LineTypeDotted,
+						TargetArrow: ArrowTypeCross,
+						Label:       pointTo("Link Label"),
+						TargetNode: &Node{
+							Name:  "Target Node",
+							Type:  ShapeProcess,
+							Label: nil,
+							Links: nil,
+						},
+					},
+				}},
 			indents:  1,
-			expected: "    Node6[Label]\n    Node6-. LinkLabel .-x TargetNode\n",
+			expected: "    FirstNode[Label];\n    FirstNode <-. Link Label .-x TargetNode;\n",
 		},
 		{
 			name: "Node with multiple links and label",
-			node: createNode("Node8", pointTo("Label"), []Link{
-				{OriginArrow: ArrowTypeNone, LineType: LineTypeSolid, TargetArrow: ArrowTypeNormal, Label: nil, TargetNode: createNode("Node9", nil, nil)},
-				{OriginArrow: ArrowTypeCircle, LineType: LineTypeDotted, TargetArrow: ArrowTypeCross, Label: pointTo("LinkLabel2"), TargetNode: createNode("Node10", nil, nil)},
-			}),
+			node: &Node{
+				Name:  "First Node",
+				Type:  ShapeProcess,
+				Label: pointTo("Node Label"),
+				Links: []Link{
+					{
+						OriginArrow: ArrowTypeNone,
+						LineType:    LineTypeSolid,
+						TargetArrow: ArrowTypeNormal,
+						Label:       nil,
+						TargetNode: &Node{
+							Name:  "Target Node One",
+							Type:  ShapeProcess,
+							Label: nil,
+							Links: nil,
+						},
+					},
+					{
+						OriginArrow: ArrowTypeCircle,
+						LineType:    LineTypeDotted,
+						TargetArrow: ArrowTypeCross,
+						Label:       pointTo("Link Label"),
+						TargetNode: &Node{
+							Name:  "Target Node Two",
+							Type:  ShapeProcess,
+							Label: nil,
+							Links: nil,
+						},
+					},
+				},
+			},
 			indents:  2,
-			expected: "        Node8[Label]\n        Node8-- TargetNode9\n        Node8o-. LinkLabel2 .-x TargetNode10\n",
+			expected: "        FirstNode[Node Label];\n        FirstNode --> TargetNodeOne;\n        FirstNode o-. Link Label .-x TargetNodeTwo;\n",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.node.toMermaid(tt.indents)
+			got := tt.node.toMermaidNode(tt.indents)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
+				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-//
-//import (
-//	"errors"
-//	"testing"
-//
-//	"github.com/google/go-cmp/cmp"
-//)
-//
-//func TestToDirection(t *testing.T) {
-//	tests := []struct {
-//		name        string
-//		input       FlowchartDirectionEnumV1
-//		expected    *FlowchartV1
-//		expectedErr error
-//	}{
-//		{
-//			name:  "Valid input - DirectionLeftRight",
-//			input: DirectionLeftRight,
-//			expected: &FlowchartV1{
-//				Direction: DirectionLeftRight,
-//				Nodes:     nil,
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:  "Valid input - DirectionTopDown",
-//			input: DirectionTopDown,
-//			expected: &FlowchartV1{
-//				Direction: DirectionTopDown,
-//				Nodes:     nil,
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:  "Valid input - with node",
-//			input: DirectionTopDown,
-//			expected: &FlowchartV1{
-//				Direction: DirectionTopDown,
-//				Nodes: []NodeV1{
-//					{},
-//				},
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:        "Invalid input - negative enum",
-//			input:       FlowchartDirectionEnumV1(-1),
-//			expected:    nil,
-//			expectedErr: errors.New("invalid FlowchartDirectionEnumV1"),
-//		},
-//		{
-//			name:        "Invalid input - out of range enum (positive)",
-//			input:       FlowchartDirectionEnumV1(2), // Out of range, since only 0 and 1 are valid
-//			expected:    nil,
-//			expectedErr: errors.New("invalid FlowchartDirectionEnumV1"),
-//		},
-//	}
-//
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			result, err := tt.input.toDirection()
-//
-//			// Check for error
-//			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(errComparer)); diff != "" {
-//				t.Errorf("unexpected error (-expected +got):\n%s", diff)
-//			}
-//
-//			// Check for correct result
-//			if diff := cmp.Diff(tt.expected, result); diff != "" {
-//				t.Errorf("unexpected result (-expected +got):\n%s", diff)
-//			}
-//		})
-//	}
-//}
-//
-//func TestToNode(t *testing.T) {
-//	tests := []struct {
-//		name        string
-//		shapeEnum   ShapeEnumV1
-//		nodeName    string
-//		nodeText    *string
-//		expected    *NodeV1
-//		expectedErr error
-//	}{
-//		{
-//			name:      "Valid input - ShapeRectangle",
-//			shapeEnum: ShapeRectangle,
-//			nodeName:  "RectangleNode",
-//			nodeText:  pointTo("SomeText"),
-//			expected: &NodeV1{
-//				Enum:              ShapeRectangle,
-//				NodeName:          "RectangleNode",
-//				NodeText:          pointTo("SomeText"),
-//				ShapeWrapperStart: "[",
-//				ShapeWrapperEnd:   "]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeRoundEdge",
-//			shapeEnum: ShapeRoundEdge,
-//			nodeName:  "RoundEdgeNode",
-//			nodeText:  pointTo("OtherText"),
-//			expected: &NodeV1{
-//				Enum:              ShapeRoundEdge,
-//				NodeName:          "RoundEdgeNode",
-//				NodeText:          pointTo("OtherText"),
-//				ShapeWrapperStart: "(",
-//				ShapeWrapperEnd:   ")",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeStadium",
-//			shapeEnum: ShapeStadium,
-//			nodeName:  "StadiumNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeStadium,
-//				NodeName:          "StadiumNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "([",
-//				ShapeWrapperEnd:   "])",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeSubroutine",
-//			shapeEnum: ShapeSubroutine,
-//			nodeName:  "SubroutineNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeSubroutine,
-//				NodeName:          "SubroutineNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "[[",
-//				ShapeWrapperEnd:   "]]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeCylinder",
-//			shapeEnum: ShapeCylinder,
-//			nodeName:  "CylinderNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeCylinder,
-//				NodeName:          "CylinderNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "[(",
-//				ShapeWrapperEnd:   ")]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeCircle",
-//			shapeEnum: ShapeCircle,
-//			nodeName:  "CircleNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeCircle,
-//				NodeName:          "CircleNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "((",
-//				ShapeWrapperEnd:   "))",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeAsymmetric",
-//			shapeEnum: ShapeAsymmetric,
-//			nodeName:  "AsymmetricNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeAsymmetric,
-//				NodeName:          "AsymmetricNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: ">",
-//				ShapeWrapperEnd:   "]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeDiamond",
-//			shapeEnum: ShapeDiamond,
-//			nodeName:  "DiamondNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeRhombus,
-//				NodeName:          "DiamondNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "{",
-//				ShapeWrapperEnd:   "}",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeRhombus",
-//			shapeEnum: ShapeRhombus,
-//			nodeName:  "RhombusNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeRhombus,
-//				NodeName:          "RhombusNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "{",
-//				ShapeWrapperEnd:   "}",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeHexagon",
-//			shapeEnum: ShapeHexagon,
-//			nodeName:  "HexagonNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeHexagon,
-//				NodeName:          "HexagonNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "{{",
-//				ShapeWrapperEnd:   "}}",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeParallelogram",
-//			shapeEnum: ShapeParallelogram,
-//			nodeName:  "ParallelogramNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeParallelogram,
-//				NodeName:          "ParallelogramNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "[/",
-//				ShapeWrapperEnd:   "/]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeAltParallelogram",
-//			shapeEnum: ShapeAltParallelogram,
-//			nodeName:  "AltParallelogramNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeAltParallelogram,
-//				NodeName:          "AltParallelogramNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "[\\",
-//				ShapeWrapperEnd:   "\\]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeTrapezoid",
-//			shapeEnum: ShapeTrapezoid,
-//			nodeName:  "TrapezoidNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeTrapezoid,
-//				NodeName:          "TrapezoidNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "[/",
-//				ShapeWrapperEnd:   "\\]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeAltTrapezoid",
-//			shapeEnum: ShapeAltTrapezoid,
-//			nodeName:  "AltTrapezoidNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeAltTrapezoid,
-//				NodeName:          "AltTrapezoidNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "[\\",
-//				ShapeWrapperEnd:   "/]",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:      "Valid input - ShapeDoubleCircle",
-//			shapeEnum: ShapeDoubleCircle,
-//			nodeName:  "DoubleCircleNode",
-//			nodeText:  pointTo("Text"),
-//			expected: &NodeV1{
-//				Enum:              ShapeDoubleCircle,
-//				NodeName:          "DoubleCircleNode",
-//				NodeText:          pointTo("Text"),
-//				ShapeWrapperStart: "(((",
-//				ShapeWrapperEnd:   ")))",
-//			},
-//			expectedErr: nil,
-//		},
-//		{
-//			name:        "Invalid input - unrecognized enum",
-//			shapeEnum:   ShapeEnumV1(100), // Arbitrary invalid value
-//			nodeName:    "InvalidNode",
-//			nodeText:    pointTo("Text"),
-//			expected:    nil,
-//			expectedErr: errors.New("invalid ShapeEnumV1"),
-//		},
-//	}
-//
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			result, err := tt.shapeEnum.toNode(tt.nodeName, tt.nodeText)
-//
-//			// Check for error
-//			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(func(x, y error) bool {
-//				return (x == nil && y == nil) || (x != nil && y != nil && x.Error() == y.Error())
-//			})); diff != "" {
-//				t.Errorf("unexpected error (-expected +got):\n%s", diff)
-//			}
-//
-//			// Check for correct result
-//			if diff := cmp.Diff(tt.expected, result); diff != "" {
-//				t.Errorf("unexpected result (-expected +got):\n%s", diff)
-//			}
-//		})
-//	}
-//}
-//
-//func pointTo[T any](value T) *T {
-//	return &value
-//}
-//
-//func errComparer(x, y error) bool {
-//	return (x == nil && y == nil) || (x != nil && y != nil && x.Error() == y.Error())
-//}
+func TestFlowchart_toMermaidSubgraph(t *testing.T) {
+	tests := []struct {
+		name      string
+		flowchart *Flowchart
+		indents   int
+		expected  string
+	}{
+		{
+			name: "Flowchart with no title",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     nil,
+				Nodes:     []*Node{{Name: "Node One"}},
+				Subgraphs: nil,
+			},
+			indents:  1,
+			expected: "    subgraph 123456;\n        direction LR;\n\n        NodeOne;\n    end;\n",
+		},
+		{
+			name: "Flowchart with no subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("Main Title"),
+				Nodes: []*Node{
+					{Name: "First Node"},
+					{Name: "Second Node"},
+				},
+				Subgraphs: []*Flowchart{},
+			},
+			indents:  1,
+			expected: "    subgraph MainTitle [Main Title];\n        direction TD;\n\n        FirstNode;\n\n        SecondNode;\n    end;\n",
+		},
+		{
+			name: "Flowchart with subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("Main Title"),
+				Nodes:     []*Node{{Name: "First Node"}},
+				Subgraphs: []*Flowchart{
+					{
+						Direction: DirectionHorizontalLeft,
+						Title:     pointTo("Subgraph One"),
+						Nodes:     []*Node{{Name: "Second Node"}},
+					},
+					{
+						Direction: DirectionHorizontalRight,
+						Title:     pointTo("Subgraph Two"),
+						Nodes:     []*Node{{Name: "Third Node"}},
+					},
+				},
+			},
+			indents: 0,
+			expected: `subgraph MainTitle [Main Title];
+    direction TD;
+
+    FirstNode;
+
+    subgraph SubgraphOne [Subgraph One];
+        direction RL;
+
+        SecondNode;
+    end;
+
+    subgraph SubgraphTwo [Subgraph Two];
+        direction LR;
+
+        ThirdNode;
+    end;
+end;
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.flowchart.toMermaidSubgraph(tt.indents)
+			if tt.flowchart.Title == nil {
+				if diff := cmp.Diff(tt.expected, got, cmp.Comparer(ignoreUUIDInSubgraph)); diff != "" {
+					t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tt.expected, got); diff != "" {
+					t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
+func ignoreUUIDInSubgraph(x, y string) bool {
+	xIndex := strings.Index(x, "subgraph ")
+	yIndex := strings.Index(y, "subgraph ")
+
+	return xIndex == yIndex && x[0:xIndex+1] == y[0:yIndex+1] && x[xIndex+16:] == y[yIndex+16:]
+}
