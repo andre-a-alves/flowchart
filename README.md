@@ -45,7 +45,7 @@ func main() {
     fmt.Println(chart.ToMermaid())
 }
 ```
-## Instalation
+## Installation
 ```
 go get github.com/yourusername/flowchart
 ```
