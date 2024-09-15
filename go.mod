@@ -1,4 +1,4 @@
-module flowchart
+module github.com/andre-a-alves/flowchart
 
 go 1.23
 

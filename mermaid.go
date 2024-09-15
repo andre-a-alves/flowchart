@@ -1,4 +1,4 @@
-package main
+package flowchart
 
 import (
 	"fmt"
