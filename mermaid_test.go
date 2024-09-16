@@ -854,11 +854,11 @@ func fixtureFlowchart() *Flowchart {
 	nodeSeven := BasicNode("Node Seven", nil)
 	nodeEight := BasicNode("Node Eight", nil)
 
-	nodeOneLink := BasicLink(nodeTwo, nil)
-	nodeTwoLinkOne := BasicLink(nodeThree, nil)
-	nodeTwoLinkTwo := BasicLink(nodeFour, nil)
-	nodeFiveLink := BasicLink(nodeSix, nil)
-	nodeSevenLink := BasicLink(nodeEight, nil)
+	nodeOneLink := SolidLink(nodeTwo, nil)
+	nodeTwoLinkOne := SolidLink(nodeThree, nil)
+	nodeTwoLinkTwo := SolidLink(nodeFour, nil)
+	nodeFiveLink := SolidLink(nodeSix, nil)
+	nodeSevenLink := SolidLink(nodeEight, nil)
 
 	nodeOne.Links = []Link{nodeOneLink}
 	nodeTwo.Links = []Link{nodeTwoLinkOne, nodeTwoLinkTwo}

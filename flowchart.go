@@ -93,10 +93,22 @@ func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
 	return nil
 }
 
-func BasicLink(targetNode *Node, label *string) Link {
+func SolidLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeSolid)
+}
+
+func DottedLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeDotted)
+}
+
+func ThickLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeThick)
+}
+
+func basicLink(targetNode *Node, label *string, lineType LineTypeEnum) Link {
 	return Link{
 		TargetNode:  targetNode,
-		LineType:    LineTypeSolid,
+		LineType:    lineType,
 		ArrowType:   ArrowTypeNormal,
 		OriginArrow: false,
 		TargetArrow: true,

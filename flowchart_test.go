@@ -134,60 +134,104 @@ func TestFlowchart_AddSubgraph(t *testing.T) {
 	}
 }
 
-func TestBasicLink(t *testing.T) {
-	tests := []struct {
+func TestLinks(t *testing.T) {
+	fixtureLink := func(mods ...func(l *Link)) Link {
+		link := &Link{
+			TargetNode:  nil,
+			LineType:    LineTypeSolid,
+			ArrowType:   ArrowTypeNormal,
+			OriginArrow: false,
+			TargetArrow: true,
+			Label:       nil,
+		}
+		for _, mod := range mods {
+			mod(link)
+		}
+		return *link
+	}
+	fixtureLabel := pointTo("Link Label")
+	fixtureTarget := &Node{Name: "Node1"}
+
+	testBasicLink := []struct {
 		name       string
 		targetNode *Node
 		label      *string
+		lineType   LineTypeEnum
 		expected   Link
 	}{
 		{
 			name:       "Nil target node",
 			targetNode: nil,
-			label:      pointTo("Link Label"),
-			expected: Link{
-				ArrowType:   ArrowTypeNormal,
-				TargetNode:  nil,
-				LineType:    LineTypeSolid,
-				OriginArrow: false,
-				TargetArrow: true,
-				Label:       pointTo("Link Label"),
-			},
+			label:      fixtureLabel,
+			lineType:   LineTypeSolid,
+			expected: fixtureLink(func(l *Link) {
+				l.Label = fixtureLabel
+			}),
 		},
 		{
 			name:       "Nil label",
-			targetNode: &Node{Name: "Node1"},
+			targetNode: fixtureTarget,
 			label:      nil,
-			expected: Link{
-				ArrowType:   ArrowTypeNormal,
-				TargetNode:  &Node{Name: "Node1"},
-				LineType:    LineTypeSolid,
-				OriginArrow: false,
-				TargetArrow: true,
-				Label:       nil,
-			},
+			lineType:   LineTypeSolid,
+			expected: fixtureLink(func(l *Link) {
+				l.TargetNode = fixtureTarget
+			}),
 		},
 		{
-			name:       "Valid target node with label",
-			targetNode: &Node{Name: "Node2"},
-			label:      pointTo("Link Label"),
-			expected: Link{
-				ArrowType:   ArrowTypeNormal,
-				TargetNode:  &Node{Name: "Node2"},
-				LineType:    LineTypeSolid,
-				OriginArrow: false,
-				TargetArrow: true,
-				Label:       pointTo("Link Label"),
-			},
+			name:       "Valid target node with label - dotted",
+			targetNode: fixtureTarget,
+			label:      fixtureLabel,
+			lineType:   LineTypeDotted,
+			expected: fixtureLink(func(l *Link) {
+				l.TargetNode = fixtureTarget
+				l.Label = fixtureLabel
+				l.LineType = LineTypeDotted
+			}),
 		},
 	}
-
-	for _, tt := range tests {
+	for _, tt := range testBasicLink {
 		t.Run(tt.name, func(t *testing.T) {
-			got := BasicLink(tt.targetNode, tt.label)
+			got := basicLink(tt.targetNode, tt.label, tt.lineType)
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
-				t.Errorf("BasicLink() got mismatch (-want +got):\n%s", diff)
+				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+
+	testLinkTypes := []struct {
+		name     string
+		function func(*Node, *string) Link
+		expected Link
+	}{
+		{
+			name:     "solid link",
+			function: SolidLink,
+			expected: fixtureLink(func(l *Link) {
+				l.LineType = LineTypeSolid
+			}),
+		},
+		{
+			name:     "dotted link",
+			function: DottedLink,
+			expected: fixtureLink(func(l *Link) {
+				l.LineType = LineTypeDotted
+			}),
+		},
+		{
+			name:     "thick link",
+			function: ThickLink,
+			expected: fixtureLink(func(l *Link) {
+				l.LineType = LineTypeThick
+			}),
+		},
+	}
+	for _, tt := range testLinkTypes {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.function(nil, nil)
+
+			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
+				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
