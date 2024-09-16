@@ -238,7 +238,7 @@ func TestLinks(t *testing.T) {
 			got := tt.function(nil, nil)
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
-				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
+				t.Errorf("got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -286,10 +286,10 @@ func TestNodes(t *testing.T) {
 	}
 	for _, tt := range testBasicNode {
 		t.Run(tt.name, func(t *testing.T) {
-			result := basicNode(tt.nodeName, tt.label, tt.typ)
+			got := basicNode(tt.nodeName, tt.label, tt.typ)
 
-			if diff := cmp.Diff(tt.expected, result, cmp.AllowUnexported(Node{})); diff != "" {
-				t.Errorf("basicNode() result mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
+				t.Errorf("basicNode() got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -361,7 +361,7 @@ func TestNodes(t *testing.T) {
 			got := tt.function(fixtureNodeName, nil)
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
-				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
+				t.Errorf("got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -443,7 +443,7 @@ func TestBasicFlowchart(t *testing.T) {
 			got := tt.function(nil)
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Flowchart{})); diff != "" {
-				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
+				t.Errorf("got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
