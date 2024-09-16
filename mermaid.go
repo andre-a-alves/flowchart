@@ -116,13 +116,13 @@ func (n NodeTypeEnum) toMermaidRight() string {
 	case NodeTypeDecision:
 		return "}"
 	case NodeTypeInputOutput:
-		return "/["
+		return "/]"
 	case NodeTypeConnector:
 		return "))"
 	case NodeTypeDatabase:
 		return ")]"
 	default:
-		return "}"
+		return ")"
 	}
 }
 

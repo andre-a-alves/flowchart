@@ -367,7 +367,7 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 		{
 			name:     "InputOutput right",
 			nodeType: NodeTypeInputOutput,
-			expected: "/[",
+			expected: "/]",
 		},
 		{
 			name:     "Connector right",
@@ -382,7 +382,7 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 		{
 			name:     "Default right (invalid node type)",
 			nodeType: NodeTypeEnum(-1), // Unknown NodeTypeEnum
-			expected: "}",
+			expected: ")",
 		},
 	}
 
@@ -678,10 +678,97 @@ func TestNode_toMermaidNode(t *testing.T) {
 			expected: "        FirstNode[Node Label];\n        FirstNode --> TargetNodeOne;\n        FirstNode o-. Link Label .-o TargetNodeTwo;\n",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.node.toMermaidNode(tt.indents)
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+
+	fixtureNodeName := "node"
+	fixtureLabel := pointTo("a label")
+
+	testTypes := []struct {
+		name     string
+		nodeName string
+		nodeType NodeTypeEnum
+		label    *string
+		expected string
+	}{
+		{
+			name:     "terminator",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeTerminator,
+			label:    fixtureLabel,
+			expected: "node(a label);\n",
+		},
+		{
+			name:     "process",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeProcess,
+			label:    fixtureLabel,
+			expected: "node[a label];\n",
+		},
+		{
+			name:     "alternate process",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeAlternateProcess,
+			label:    fixtureLabel,
+			expected: "node([a label]);\n",
+		},
+		{
+			name:     "subprocess",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeSubprocess,
+			label:    fixtureLabel,
+			expected: "node[[a label]];\n",
+		},
+		{
+			name:     "decision",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeDecision,
+			label:    fixtureLabel,
+			expected: "node{a label};\n",
+		},
+		{
+			name:     "input/output",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeInputOutput,
+			label:    fixtureLabel,
+			expected: "node[/a label/];\n",
+		},
+		{
+			name:     "connector",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeConnector,
+			label:    fixtureLabel,
+			expected: "node((a label));\n",
+		},
+		{
+			name:     "database",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeDatabase,
+			label:    fixtureLabel,
+			expected: "node[(a label)];\n",
+		},
+		{
+			name:     "invalid",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeEnum(-1),
+			label:    fixtureLabel,
+			expected: "node(a label);\n",
+		},
+	}
+	for _, tt := range testTypes {
+		t.Run(tt.name, func(t *testing.T) {
+			node := &Node{
+				Name:  tt.nodeName,
+				Type:  tt.nodeType,
+				Label: tt.label,
+			}
+			got := node.toMermaidNode(0)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
 			}
