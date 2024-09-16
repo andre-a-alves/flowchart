@@ -120,10 +120,42 @@ func basicLink(targetNode *Node, label *string, lineType LineTypeEnum) Link {
 	}
 }
 
-func BasicNode(name string, label *string) *Node {
+func TerminatorNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeTerminator)
+}
+
+func ProcessNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeProcess)
+}
+
+func AlternateProcessNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeAlternateProcess)
+}
+
+func SubprocessNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeSubprocess)
+}
+
+func DecisionNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeDecision)
+}
+
+func InputOutputNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeInputOutput)
+}
+
+func ConnectorNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeConnector)
+}
+
+func DatabaseNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeDatabase)
+}
+
+func basicNode(name string, label *string, typ NodeTypeEnum) *Node {
 	return &Node{
 		Name:  name,
-		Type:  TypeProcess,
+		Type:  typ,
 		Label: label,
 		Links: make([]Link, 0),
 	}

@@ -244,43 +244,124 @@ func TestLinks(t *testing.T) {
 	}
 }
 
-func TestBasicNode(t *testing.T) {
-	tests := []struct {
+func TestNodes(t *testing.T) {
+	fixtureNodeName := "node"
+	fixtureNode := func(mods ...func(l *Node)) *Node {
+		node := &Node{
+			Name:  fixtureNodeName,
+			Type:  NodeTypeProcess,
+			Label: nil,
+			Links: []Link{},
+		}
+		for _, mod := range mods {
+			mod(node)
+		}
+		return node
+	}
+
+	testBasicNode := []struct {
 		name     string
 		nodeName string
 		label    *string
+		typ      NodeTypeEnum
 		expected *Node
 	}{
 		{
-			name:     "Valid node with nil label",
-			nodeName: "TestNode1",
+			name:     "nil label",
+			nodeName: fixtureNodeName,
 			label:    nil,
-			expected: &Node{
-				Name:  "TestNode1",
-				Type:  NodeTypeProcess,
-				Label: nil,
-				Links: []Link{},
-			},
+			typ:      NodeTypeProcess,
+			expected: fixtureNode(),
 		},
 		{
-			name:     "Valid node with label",
-			nodeName: "TestNode2",
+			name:     "label",
+			nodeName: fixtureNodeName,
 			label:    pointTo("Node Label"),
-			expected: &Node{
-				Name:  "TestNode2",
-				Type:  NodeTypeProcess,
-				Label: pointTo("Node Label"),
-				Links: []Link{},
-			},
+			typ:      NodeTypeDatabase,
+			expected: fixtureNode(func(l *Node) {
+				l.Label = pointTo("Node Label")
+				l.Type = NodeTypeDatabase
+			}),
 		},
 	}
-
-	for _, tt := range tests {
+	for _, tt := range testBasicNode {
 		t.Run(tt.name, func(t *testing.T) {
-			result := BasicNode(tt.nodeName, tt.label)
+			result := basicNode(tt.nodeName, tt.label, tt.typ)
 
 			if diff := cmp.Diff(tt.expected, result, cmp.AllowUnexported(Node{})); diff != "" {
-				t.Errorf("BasicNode() result mismatch (-want +got):\n%s", diff)
+				t.Errorf("basicNode() result mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+
+	testNodeTypes := []struct {
+		name     string
+		function func(string, *string) *Node
+		expected *Node
+	}{
+		{
+			name:     "terminator",
+			function: TerminatorNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeTerminator
+			}),
+		},
+		{
+			name:     "process",
+			function: ProcessNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeProcess
+			}),
+		},
+		{
+			name:     "alternate process",
+			function: AlternateProcessNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeAlternateProcess
+			}),
+		},
+		{
+			name:     "subprocess",
+			function: SubprocessNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeSubprocess
+			}),
+		},
+		{
+			name:     "decision",
+			function: DecisionNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeDecision
+			}),
+		},
+		{
+			name:     "input/output",
+			function: InputOutputNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeInputOutput
+			}),
+		},
+		{
+			name:     "connector",
+			function: ConnectorNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeConnector
+			}),
+		},
+		{
+			name:     "database",
+			function: DatabaseNode,
+			expected: fixtureNode(func(l *Node) {
+				l.Type = NodeTypeDatabase
+			}),
+		},
+	}
+	for _, tt := range testNodeTypes {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.function(fixtureNodeName, nil)
+
+			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
+				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

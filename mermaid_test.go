@@ -932,14 +932,14 @@ flowchart LR;
 }
 
 func fixtureFlowchart() *Flowchart {
-	nodeOne := BasicNode("Node One", nil)
-	nodeTwo := BasicNode("Node Two", nil)
-	nodeThree := BasicNode("Node Three", nil)
-	nodeFour := BasicNode("Node Four", nil)
-	nodeFive := BasicNode("Node Five", nil)
-	nodeSix := BasicNode("Node Six", nil)
-	nodeSeven := BasicNode("Node Seven", nil)
-	nodeEight := BasicNode("Node Eight", nil)
+	nodeOne := ProcessNode("Node One", nil)
+	nodeTwo := ProcessNode("Node Two", nil)
+	nodeThree := ProcessNode("Node Three", nil)
+	nodeFour := ProcessNode("Node Four", nil)
+	nodeFive := ProcessNode("Node Five", nil)
+	nodeSix := ProcessNode("Node Six", nil)
+	nodeSeven := ProcessNode("Node Seven", nil)
+	nodeEight := ProcessNode("Node Eight", nil)
 
 	nodeOneLink := SolidLink(nodeTwo, nil)
 	nodeTwoLinkOne := SolidLink(nodeThree, nil)
