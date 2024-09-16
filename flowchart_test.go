@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestNodeAddLink(t *testing.T) {
+func TestNode_AddLink(t *testing.T) {
 	tests := []struct {
 		name          string
 		node          Node
@@ -43,14 +43,92 @@ func TestNodeAddLink(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.node.addLink(tt.link)
+			err := tt.node.AddLink(tt.link)
 
 			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
-				t.Errorf("addLink() error mismatch (-want +got):\n%s", diff)
+				t.Errorf("AddLink() error mismatch (-want +got):\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tt.expectedLinks, tt.node.Links); diff != "" {
-				t.Errorf("addLink() Links mismatch (-want +got):\n%s", diff)
+				t.Errorf("AddLink() Links mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestFlowchart_AddNode(t *testing.T) {
+	tests := []struct {
+		name          string
+		flowchart     *Flowchart
+		node          *Node
+		expectedErr   error
+		expectedNodes []*Node
+	}{
+		{
+			name:          "Add subgraph",
+			flowchart:     &Flowchart{},
+			node:          &Node{Name: "Singleton"},
+			expectedErr:   nil,
+			expectedNodes: []*Node{{Name: "Singleton"}},
+		},
+		{
+			name:          "Add duplicate subgraph",
+			flowchart:     &Flowchart{Nodes: []*Node{{Name: "Singleton"}}},
+			node:          &Node{Name: "Singleton"},
+			expectedErr:   fmt.Errorf("cannot add duplicate subgraph"),
+			expectedNodes: []*Node{{Name: "Singleton"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.flowchart.AddNode(tt.node)
+
+			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
+				t.Errorf("AddLink() error mismatch (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tt.expectedNodes, tt.flowchart.Nodes); diff != "" {
+				t.Errorf("AddNode() Nodes mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestFlowchart_AddSubgraph(t *testing.T) {
+	tests := []struct {
+		name              string
+		flowchart         *Flowchart
+		subgraph          *Flowchart
+		expectedErr       error
+		expectedSubgraphs []*Flowchart
+	}{
+		{
+			name:              "Add subgraph",
+			flowchart:         &Flowchart{},
+			subgraph:          &Flowchart{Title: pointTo("Singleton")},
+			expectedErr:       nil,
+			expectedSubgraphs: []*Flowchart{{Title: pointTo("Singleton")}},
+		},
+		{
+			name:              "Add duplicate subgraph",
+			flowchart:         &Flowchart{Subgraphs: []*Flowchart{{Title: pointTo("Singleton")}}},
+			subgraph:          &Flowchart{Title: pointTo("Singleton")},
+			expectedErr:       fmt.Errorf("cannot add duplicate subgraph"),
+			expectedSubgraphs: []*Flowchart{{Title: pointTo("Singleton")}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.flowchart.AddSubgraph(tt.subgraph)
+
+			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
+				t.Errorf("AddLink() error mismatch (-want +got):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tt.expectedSubgraphs, tt.flowchart.Subgraphs); diff != "" {
+				t.Errorf("AddNode() Nodes mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

@@ -65,7 +65,7 @@ type Flowchart struct {
 	Subgraphs []*Flowchart
 }
 
-func (n *Node) addLink(link Link) error {
+func (n *Node) AddLink(link Link) error {
 	if link.TargetNode == nil {
 		return fmt.Errorf("cannot add link with no target node")
 	}
@@ -73,12 +73,22 @@ func (n *Node) addLink(link Link) error {
 	return nil
 }
 
-func (f *Flowchart) addNode(node *Node) error {
+func (f *Flowchart) AddNode(node *Node) error {
+	for _, n := range f.Nodes {
+		if n.Name == node.Name {
+			return fmt.Errorf("cannot add duplicate subgraph")
+		}
+	}
 	f.Nodes = append(f.Nodes, node)
 	return nil
 }
 
-func (f *Flowchart) addSubgraph(subgraph *Flowchart) error {
+func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
+	for _, s := range f.Subgraphs {
+		if s.Title != nil && subgraph.Title != nil && *s.Title == *subgraph.Title {
+			return fmt.Errorf("cannot add duplicate subgraph")
+		}
+	}
 	f.Subgraphs = append(f.Subgraphs, subgraph)
 	return nil
 }
