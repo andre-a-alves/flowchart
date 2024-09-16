@@ -93,6 +93,10 @@ func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
 	return nil
 }
 
+func BlankLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeNone)
+}
+
 func SolidLink(targetNode *Node, label *string) Link {
 	return basicLink(targetNode, label, LineTypeSolid)
 }

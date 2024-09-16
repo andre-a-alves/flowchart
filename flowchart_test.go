@@ -205,6 +205,13 @@ func TestLinks(t *testing.T) {
 		expected Link
 	}{
 		{
+			name:     "blank link",
+			function: BlankLink,
+			expected: fixtureLink(func(l *Link) {
+				l.LineType = LineTypeNone
+			}),
+		},
+		{
 			name:     "solid link",
 			function: SolidLink,
 			expected: fixtureLink(func(l *Link) {
