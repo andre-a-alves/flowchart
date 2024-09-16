@@ -250,7 +250,7 @@ func TestBasicNode(t *testing.T) {
 			label:    nil,
 			expected: &Node{
 				Name:  "TestNode1",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: []Link{},
 			},

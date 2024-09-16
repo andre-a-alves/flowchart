@@ -18,14 +18,14 @@ const (
 )
 
 const (
-	TypeTerminator NodeTypeEnum = iota
-	TypeProcess
-	TypeAlternateProcess
-	TypeSubprocess
-	TypeDecision
-	TypeInputOutput
-	TypeConnector
-	TypeDatabase
+	NodeTypeTerminator NodeTypeEnum = iota
+	NodeTypeProcess
+	NodeTypeAlternateProcess
+	NodeTypeSubprocess
+	NodeTypeDecision
+	NodeTypeInputOutput
+	NodeTypeConnector
+	NodeTypeDatabase
 )
 
 const (
