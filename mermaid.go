@@ -46,27 +46,23 @@ func (a ArrowTypeEnum) toMermaidBidirectional() string {
 }
 
 func (l LineTypeEnum) toMermaidOrigin() string {
-	switch l {
-	case LineTypeDotted:
-		return "-."
-	// should not happen
-	case LineTypeNone:
+	if l == LineTypeNone {
 		return ""
-	default:
-		return l.toMermaidBidirectional()
 	}
+	if l == LineTypeDotted || l == LineTypeSolid || l == LineTypeThick {
+		return l.toMermaidBidirectional()[:2]
+	}
+	return l.toMermaidBidirectional()
 }
 
 func (l LineTypeEnum) toMermaidTarget() string {
-	switch l {
-	case LineTypeDotted:
-		return ".-"
-	// should not happen
-	case LineTypeNone:
+	if l == LineTypeNone {
 		return ""
-	default:
-		return l.toMermaidBidirectional()
 	}
+	if l == LineTypeDotted || l == LineTypeSolid || l == LineTypeThick {
+		return l.toMermaidBidirectional()[1:]
+	}
+	return l.toMermaidBidirectional()
 }
 
 func (l LineTypeEnum) toMermaidBidirectional() string {
@@ -74,11 +70,11 @@ func (l LineTypeEnum) toMermaidBidirectional() string {
 	case LineTypeNone:
 		return "~~~"
 	case LineTypeSolid:
-		return "--"
+		return "---"
 	case LineTypeDotted:
 		return "-.-"
 	case LineTypeThick:
-		return "=="
+		return "==="
 	default:
 		return ""
 	}
@@ -131,13 +127,27 @@ func (n NodeTypeEnum) toMermaidRight() string {
 }
 
 func (l Link) toMermaid() string {
+	if l.TargetNode == nil {
+		return ""
+	}
+
 	line := l.LineType.toMermaidBidirectional()
+
 	if l.LineType == LineTypeNone {
 		return fmt.Sprintf("%s %s", line, removeSpaces(l.TargetNode.Name))
 	}
 
-	originArrow := l.OriginArrow.toMermaidOrigin()
-	targetArrow := l.TargetArrow.toMermaidTarget()
+	if (l.OriginArrow || l.TargetArrow) && (l.LineType == LineTypeSolid || l.LineType == LineTypeThick) {
+		line = line[:2]
+	}
+	originArrow := ""
+	if l.OriginArrow {
+		originArrow = l.ArrowType.toMermaidOrigin()
+	}
+	targetArrow := ""
+	if l.TargetArrow {
+		targetArrow = l.ArrowType.toMermaidTarget()
+	}
 
 	if l.Label != nil && *l.Label != "" {
 		line = fmt.Sprintf("%s %s %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())

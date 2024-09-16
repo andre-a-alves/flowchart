@@ -1,7 +1,6 @@
 package flowchart
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -46,8 +45,9 @@ const (
 type Link struct {
 	TargetNode  *Node
 	LineType    LineTypeEnum
-	OriginArrow ArrowTypeEnum
-	TargetArrow ArrowTypeEnum
+	ArrowType   ArrowTypeEnum
+	OriginArrow bool
+	TargetArrow bool
 	Label       *string
 }
 
@@ -83,17 +83,15 @@ func (f *Flowchart) addSubgraph(subgraph *Flowchart) error {
 	return nil
 }
 
-func BasicLink(targetNode *Node, label *string) (Link, error) {
-	if targetNode == nil {
-		return Link{}, errors.New("targetNode is nil")
-	}
+func BasicLink(targetNode *Node, label *string) Link {
 	return Link{
 		TargetNode:  targetNode,
 		LineType:    LineTypeSolid,
-		OriginArrow: ArrowTypeNone,
-		TargetArrow: ArrowTypeNormal,
+		ArrowType:   ArrowTypeNormal,
+		OriginArrow: false,
+		TargetArrow: true,
 		Label:       label,
-	}, nil
+	}
 }
 
 func BasicNode(name string, label *string) *Node {
