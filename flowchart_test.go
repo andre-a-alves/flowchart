@@ -261,7 +261,7 @@ func TestBasicNode(t *testing.T) {
 			label:    pointTo("Node Label"),
 			expected: &Node{
 				Name:  "TestNode2",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{},
 			},

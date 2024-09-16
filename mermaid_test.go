@@ -277,42 +277,42 @@ func TestNodeTypeEnum_toMermaidLeft(t *testing.T) {
 	}{
 		{
 			name:     "Terminator left",
-			nodeType: TypeTerminator,
+			nodeType: NodeTypeTerminator,
 			expected: "(",
 		},
 		{
 			name:     "Process left",
-			nodeType: TypeProcess,
+			nodeType: NodeTypeProcess,
 			expected: "[",
 		},
 		{
 			name:     "AlternateProcess left",
-			nodeType: TypeAlternateProcess,
+			nodeType: NodeTypeAlternateProcess,
 			expected: "([",
 		},
 		{
 			name:     "Subprocess left",
-			nodeType: TypeSubprocess,
+			nodeType: NodeTypeSubprocess,
 			expected: "[[",
 		},
 		{
 			name:     "Decision left",
-			nodeType: TypeDecision,
+			nodeType: NodeTypeDecision,
 			expected: "{",
 		},
 		{
 			name:     "InputOutput left",
-			nodeType: TypeInputOutput,
+			nodeType: NodeTypeInputOutput,
 			expected: "[/",
 		},
 		{
 			name:     "Connector left",
-			nodeType: TypeConnector,
+			nodeType: NodeTypeConnector,
 			expected: "((",
 		},
 		{
 			name:     "Database left",
-			nodeType: TypeDatabase,
+			nodeType: NodeTypeDatabase,
 			expected: "[(",
 		},
 		{
@@ -341,42 +341,42 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 	}{
 		{
 			name:     "Terminator right",
-			nodeType: TypeTerminator,
+			nodeType: NodeTypeTerminator,
 			expected: ")",
 		},
 		{
 			name:     "Process right",
-			nodeType: TypeProcess,
+			nodeType: NodeTypeProcess,
 			expected: "]",
 		},
 		{
 			name:     "AlternateProcess right",
-			nodeType: TypeAlternateProcess,
+			nodeType: NodeTypeAlternateProcess,
 			expected: "])",
 		},
 		{
 			name:     "Subprocess right",
-			nodeType: TypeSubprocess,
+			nodeType: NodeTypeSubprocess,
 			expected: "]]",
 		},
 		{
 			name:     "Decision right",
-			nodeType: TypeDecision,
+			nodeType: NodeTypeDecision,
 			expected: "}",
 		},
 		{
 			name:     "InputOutput right",
-			nodeType: TypeInputOutput,
+			nodeType: NodeTypeInputOutput,
 			expected: "/[",
 		},
 		{
 			name:     "Connector right",
-			nodeType: TypeConnector,
+			nodeType: NodeTypeConnector,
 			expected: "))",
 		},
 		{
 			name:     "Database right",
-			nodeType: TypeDatabase,
+			nodeType: NodeTypeDatabase,
 			expected: ")]",
 		},
 		{
@@ -561,7 +561,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with no label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: nil,
 			},
@@ -572,7 +572,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with empty label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo(""),
 				Links: nil,
 			},
@@ -583,7 +583,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: nil,
 			},
@@ -594,7 +594,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with links and no label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: []Link{
 					{
@@ -605,7 +605,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: pointTo("ignored node label"),
 							Links: nil,
 						},
@@ -619,7 +619,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with links and label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Label"),
 				Links: []Link{
 					{
@@ -630,7 +630,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -643,7 +643,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with multiple links and label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{
 					{
@@ -654,7 +654,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node One",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -667,7 +667,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node Two",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
 						},
