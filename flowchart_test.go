@@ -1,7 +1,6 @@
 package flowchart
 
 import (
-	"errors"
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"testing"
@@ -46,12 +45,10 @@ func TestNodeAddLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.node.addLink(tt.link)
 
-			// Error check using cmp.Diff
 			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
 				t.Errorf("addLink() error mismatch (-want +got):\n%s", diff)
 			}
 
-			// Link check using cmp.Diff
 			if diff := cmp.Diff(tt.expectedLinks, tt.node.Links); diff != "" {
 				t.Errorf("addLink() Links mismatch (-want +got):\n%s", diff)
 			}
@@ -61,59 +58,58 @@ func TestNodeAddLink(t *testing.T) {
 
 func TestBasicLink(t *testing.T) {
 	tests := []struct {
-		name        string
-		targetNode  *Node
-		label       *string
-		expected    Link
-		expectedErr error
+		name       string
+		targetNode *Node
+		label      *string
+		expected   Link
 	}{
 		{
-			name:       "Valid target node with nil label",
-			targetNode: &Node{Name: "Node1", Type: TypeProcess},
+			name:       "Nil target node",
+			targetNode: nil,
+			label:      pointTo("Link Label"),
+			expected: Link{
+				ArrowType:   ArrowTypeNormal,
+				TargetNode:  nil,
+				LineType:    LineTypeSolid,
+				OriginArrow: false,
+				TargetArrow: true,
+				Label:       pointTo("Link Label"),
+			},
+		},
+		{
+			name:       "Nil label",
+			targetNode: &Node{Name: "Node1"},
 			label:      nil,
 			expected: Link{
-				TargetNode:  &Node{Name: "Node1", Type: TypeProcess},
+				ArrowType:   ArrowTypeNormal,
+				TargetNode:  &Node{Name: "Node1"},
 				LineType:    LineTypeSolid,
-				OriginArrow: ArrowTypeNone,
-				TargetArrow: ArrowTypeNormal,
+				OriginArrow: false,
+				TargetArrow: true,
 				Label:       nil,
 			},
-			expectedErr: nil,
 		},
 		{
 			name:       "Valid target node with label",
-			targetNode: &Node{Name: "Node2", Type: TypeDecision},
+			targetNode: &Node{Name: "Node2"},
 			label:      pointTo("Link Label"),
 			expected: Link{
-				TargetNode:  &Node{Name: "Node2", Type: TypeDecision},
+				ArrowType:   ArrowTypeNormal,
+				TargetNode:  &Node{Name: "Node2"},
 				LineType:    LineTypeSolid,
-				OriginArrow: ArrowTypeNone,
-				TargetArrow: ArrowTypeNormal,
+				OriginArrow: false,
+				TargetArrow: true,
 				Label:       pointTo("Link Label"),
 			},
-			expectedErr: nil,
-		},
-		{
-			name:        "Nil target node",
-			targetNode:  nil,
-			label:       pointTo("Some Label"),
-			expected:    Link{},
-			expectedErr: errors.New("targetNode is nil"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := BasicLink(tt.targetNode, tt.label)
+			got := BasicLink(tt.targetNode, tt.label)
 
-			// Compare the error using cmp.Diff
-			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
-				t.Errorf("BasicLink() error mismatch (-want +got):\n%s", diff)
-			}
-
-			// Compare the result using cmp.Diff
-			if diff := cmp.Diff(tt.expected, result, cmp.AllowUnexported(Node{})); diff != "" {
-				t.Errorf("BasicLink() result mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
+				t.Errorf("BasicLink() got mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -154,7 +150,6 @@ func TestBasicNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := BasicNode(tt.nodeName, tt.label)
 
-			// Compare result using cmp.Diff
 			if diff := cmp.Diff(tt.expected, result, cmp.AllowUnexported(Node{})); diff != "" {
 				t.Errorf("BasicNode() result mismatch (-want +got):\n%s", diff)
 			}
@@ -173,7 +168,6 @@ func TestBasicFlowchart(t *testing.T) {
 	t.Run("Basic flowchart creation", func(t *testing.T) {
 		result := BasicFlowchart()
 
-		// Compare result using cmp.Diff
 		if diff := cmp.Diff(expected, result, cmp.AllowUnexported(Flowchart{})); diff != "" {
 			t.Errorf("BasicFlowchart() result mismatch (-want +got):\n%s", diff)
 		}

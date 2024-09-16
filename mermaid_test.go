@@ -233,7 +233,7 @@ func TestLineTypeEnum_toMermaidBidirectional(t *testing.T) {
 		{
 			name:     "Solid line",
 			lineType: LineTypeSolid,
-			expected: "--",
+			expected: "---",
 		},
 		{
 			name:     "Dotted line",
@@ -243,7 +243,7 @@ func TestLineTypeEnum_toMermaidBidirectional(t *testing.T) {
 		{
 			name:     "Thick line",
 			lineType: LineTypeThick,
-			expected: "==",
+			expected: "===",
 		},
 		{
 			name:     "No line",
@@ -398,8 +398,6 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 }
 
 func TestLink_toMermaid(t *testing.T) {
-	fixtureLabelText := "label"
-	fixtureEmptyLabel := ""
 	fixtureTargetNode := Node{Name: "Target Node"}
 
 	tests := []struct {
@@ -408,70 +406,136 @@ func TestLink_toMermaid(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "Basic link with no label",
+			name: "no target",
 			link: Link{
-				OriginArrow: ArrowTypeNone,
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: false,
 				LineType:    LineTypeSolid,
-				TargetArrow: ArrowTypeNormal,
-				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				TargetArrow: true,
+				Label:       pointTo("some label"),
+				TargetNode:  nil,
 			},
-			expected: "--> TargetNode",
+			expected: "",
 		},
 		{
-			name: "Link with empty label",
+			name: "no line",
 			link: Link{
-				OriginArrow: ArrowTypeNone,
-				LineType:    LineTypeSolid,
-				TargetArrow: ArrowTypeNormal,
-				Label:       &fixtureEmptyLabel,
-				TargetNode:  &fixtureTargetNode,
-			},
-			expected: "--> TargetNode",
-		},
-		{
-			name: "Link with label",
-			link: Link{
-				OriginArrow: ArrowTypeNone,
-				LineType:    LineTypeSolid,
-				TargetArrow: ArrowTypeNormal,
-				Label:       &fixtureLabelText,
-				TargetNode:  &fixtureTargetNode,
-			},
-			expected: "-- label --> TargetNode",
-		},
-		{
-			name: "Link with different arrows and no label",
-			link: Link{
-				OriginArrow: ArrowTypeCircle,
-				LineType:    LineTypeDotted,
-				TargetArrow: ArrowTypeCross,
-				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
-			},
-			expected: "o-.-x TargetNode",
-		},
-		{
-			name: "Link with different arrows and a label",
-			link: Link{
-				OriginArrow: ArrowTypeCircle,
-				LineType:    LineTypeDotted,
-				TargetArrow: ArrowTypeCross,
-				Label:       &fixtureLabelText,
-				TargetNode:  &fixtureTargetNode,
-			},
-			expected: "o-. label .-x TargetNode",
-		},
-		{
-			name: "Link with no line",
-			link: Link{
-				OriginArrow: ArrowTypeNormal,
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
 				LineType:    LineTypeNone,
-				TargetArrow: ArrowTypeNormal,
-				Label:       &fixtureLabelText,
+				TargetArrow: false,
+				Label:       pointTo("some label"),
 				TargetNode:  &fixtureTargetNode,
 			},
 			expected: "~~~ TargetNode",
+		},
+		{
+			name: "solid line - no label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeSolid,
+				TargetArrow: false,
+				Label:       nil,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "--- TargetNode",
+		},
+		{
+			name: "solid line - with label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeSolid,
+				TargetArrow: false,
+				Label:       pointTo("some label"),
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "-- some label -- TargetNode",
+		},
+		{
+			name: "dotted line - no label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeDotted,
+				TargetArrow: false,
+				Label:       nil,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "-.- TargetNode",
+		},
+		{
+			name: "dotted line - with label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeDotted,
+				TargetArrow: false,
+				Label:       pointTo("some label"),
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "-. some label .- TargetNode",
+		},
+		{
+			name: "thick line - no label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeThick,
+				TargetArrow: false,
+				Label:       nil,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "=== TargetNode",
+		},
+		{
+			name: "thick line - with label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeThick,
+				TargetArrow: false,
+				Label:       pointTo("some label"),
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "== some label == TargetNode",
+		},
+		{
+			name: "origin arrow yes",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: true,
+				LineType:    LineTypeSolid,
+				TargetArrow: false,
+				Label:       nil,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "<-- TargetNode",
+		},
+		{
+			name: "target arrow yes",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: false,
+				LineType:    LineTypeSolid,
+				TargetArrow: true,
+				Label:       nil,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "--> TargetNode",
+		},
+		{
+			name: "both arrows",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: true,
+				LineType:    LineTypeSolid,
+				TargetArrow: true,
+				Label:       nil,
+				TargetNode:  &fixtureTargetNode,
+			},
+			expected: "<--> TargetNode",
 		},
 	}
 
@@ -534,9 +598,10 @@ func TestNode_toMermaidNode(t *testing.T) {
 				Label: nil,
 				Links: []Link{
 					{
-						OriginArrow: ArrowTypeNormal,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: true,
 						LineType:    LineTypeSolid,
-						TargetArrow: ArrowTypeNone,
+						TargetArrow: false,
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node",
@@ -558,9 +623,10 @@ func TestNode_toMermaidNode(t *testing.T) {
 				Label: pointTo("Label"),
 				Links: []Link{
 					{
-						OriginArrow: ArrowTypeNormal,
+						ArrowType:   ArrowTypeCross,
+						OriginArrow: false,
 						LineType:    LineTypeDotted,
-						TargetArrow: ArrowTypeCross,
+						TargetArrow: true,
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node",
@@ -571,7 +637,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 					},
 				}},
 			indents:  1,
-			expected: "    FirstNode[Label];\n    FirstNode <-. Link Label .-x TargetNode;\n",
+			expected: "    FirstNode[Label];\n    FirstNode -. Link Label .-x TargetNode;\n",
 		},
 		{
 			name: "Node with multiple links and label",
@@ -581,9 +647,10 @@ func TestNode_toMermaidNode(t *testing.T) {
 				Label: pointTo("Node Label"),
 				Links: []Link{
 					{
-						OriginArrow: ArrowTypeNone,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: false,
 						LineType:    LineTypeSolid,
-						TargetArrow: ArrowTypeNormal,
+						TargetArrow: true,
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node One",
@@ -593,9 +660,10 @@ func TestNode_toMermaidNode(t *testing.T) {
 						},
 					},
 					{
-						OriginArrow: ArrowTypeCircle,
+						ArrowType:   ArrowTypeCircle,
+						OriginArrow: true,
 						LineType:    LineTypeDotted,
-						TargetArrow: ArrowTypeCross,
+						TargetArrow: true,
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node Two",
@@ -607,7 +675,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 				},
 			},
 			indents:  2,
-			expected: "        FirstNode[Node Label];\n        FirstNode --> TargetNodeOne;\n        FirstNode o-. Link Label .-x TargetNodeTwo;\n",
+			expected: "        FirstNode[Node Label];\n        FirstNode --> TargetNodeOne;\n        FirstNode o-. Link Label .-o TargetNodeTwo;\n",
 		},
 	}
 
@@ -786,26 +854,11 @@ func fixtureFlowchart() *Flowchart {
 	nodeSeven := BasicNode("Node Seven", nil)
 	nodeEight := BasicNode("Node Eight", nil)
 
-	nodeOneLink, err := BasicLink(nodeTwo, nil)
-	if err != nil {
-		panic(err)
-	}
-	nodeTwoLinkOne, err := BasicLink(nodeThree, nil)
-	if err != nil {
-		panic(err)
-	}
-	nodeTwoLinkTwo, err := BasicLink(nodeFour, nil)
-	if err != nil {
-		panic(err)
-	}
-	nodeFiveLink, err := BasicLink(nodeSix, nil)
-	if err != nil {
-		panic(err)
-	}
-	nodeSevenLink, err := BasicLink(nodeEight, nil)
-	if err != nil {
-		panic(err)
-	}
+	nodeOneLink := BasicLink(nodeTwo, nil)
+	nodeTwoLinkOne := BasicLink(nodeThree, nil)
+	nodeTwoLinkTwo := BasicLink(nodeFour, nil)
+	nodeFiveLink := BasicLink(nodeSix, nil)
+	nodeSevenLink := BasicLink(nodeEight, nil)
 
 	nodeOne.Links = []Link{nodeOneLink}
 	nodeTwo.Links = []Link{nodeTwoLinkOne, nodeTwoLinkTwo}
