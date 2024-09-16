@@ -368,20 +368,85 @@ func TestNodes(t *testing.T) {
 }
 
 func TestBasicFlowchart(t *testing.T) {
-	expected := &Flowchart{
-		Direction: DirectionVertical,
-		Title:     nil,
-		Nodes:     []*Node{},
-		Subgraphs: []*Flowchart{},
+	fixtureFlowchart := func(mods ...func(f *Flowchart)) *Flowchart {
+		flowchart := &Flowchart{
+			Direction: DirectionVertical,
+			Title:     nil,
+			Nodes:     []*Node{},
+			Subgraphs: []*Flowchart{},
+		}
+		for _, mod := range mods {
+			mod(flowchart)
+		}
+		return flowchart
+	}
+	fixtureTitle := pointTo("Flowchart Title")
+
+	testBasicFlowchart := []struct {
+		name      string
+		direction FlowchartDirectionEnum
+		title     *string
+		expected  *Flowchart
+	}{
+		{
+			name:      "nil title",
+			direction: DirectionVertical,
+			title:     nil,
+			expected:  fixtureFlowchart(),
+		},
+		{
+			name:      "title",
+			direction: DirectionVertical,
+			title:     fixtureTitle,
+			expected: fixtureFlowchart(func(f *Flowchart) {
+				f.Title = fixtureTitle
+			}),
+		},
+	}
+	for _, tt := range testBasicFlowchart {
+		t.Run(tt.name, func(t *testing.T) {
+			got := basicFlowchart(tt.title, tt.direction)
+
+			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
+				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 
-	t.Run("Basic flowchart creation", func(t *testing.T) {
-		result := BasicFlowchart()
+	testFlowchartTypes := []struct {
+		name     string
+		function func(*string) *Flowchart
+		expected *Flowchart
+	}{
+		{
+			name:     "vertical",
+			function: VerticalFlowchart,
+			expected: fixtureFlowchart(),
+		},
+		{
+			name:     "left-right",
+			function: LrFlowchart,
+			expected: fixtureFlowchart(func(f *Flowchart) {
+				f.Direction = DirectionHorizontalRight
+			}),
+		},
+		{
+			name:     "right-left",
+			function: RlFlowchart,
+			expected: fixtureFlowchart(func(f *Flowchart) {
+				f.Direction = DirectionHorizontalLeft
+			}),
+		},
+	}
+	for _, tt := range testFlowchartTypes {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.function(nil)
 
-		if diff := cmp.Diff(expected, result, cmp.AllowUnexported(Flowchart{})); diff != "" {
-			t.Errorf("BasicFlowchart() result mismatch (-want +got):\n%s", diff)
-		}
-	})
+			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Flowchart{})); diff != "" {
+				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 // Helper function to compare errors

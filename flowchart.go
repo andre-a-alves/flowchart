@@ -161,10 +161,22 @@ func basicNode(name string, label *string, typ NodeTypeEnum) *Node {
 	}
 }
 
-func BasicFlowchart() *Flowchart {
+func VerticalFlowchart(title *string) *Flowchart {
+	return basicFlowchart(title, DirectionVertical)
+}
+
+func LrFlowchart(title *string) *Flowchart {
+	return basicFlowchart(title, DirectionHorizontalRight)
+}
+
+func RlFlowchart(title *string) *Flowchart {
+	return basicFlowchart(title, DirectionHorizontalLeft)
+}
+
+func basicFlowchart(title *string, direction FlowchartDirectionEnum) *Flowchart {
 	return &Flowchart{
-		Direction: DirectionVertical,
-		Title:     nil,
+		Direction: direction,
+		Title:     title,
 		Nodes:     make([]*Node, 0),
 		Subgraphs: make([]*Flowchart, 0),
 	}
