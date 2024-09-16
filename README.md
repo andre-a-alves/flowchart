@@ -1,15 +1,25 @@
-# Flowchart Generation in Mermaid.js
+# Flowchart Modeling in Go
+![GitHub License](https://img.shields.io/github/license/andre-a-alves/flowchart)
+![GitHub Tag](https://img.shields.io/github/v/tag/andre-a-alves/flowchart)
 
-This package provides a simple yet powerful API for generating flowcharts in Mermaid.js format, an open-source diagramming and charting tool. The library allows you to create nodes, links, and subgraphs, convert them to Mermaid.js code, and handle Mermaid.js-compatible flowchart directionality.
+Flowchart is a Go package designed to model flowcharts with support for various node types, link styles, and subgraphs. Currently, the package can export flowcharts in [Mermaid](https://mermaid-js.github.io/mermaid/) syntax, with plans for additional export options in the future.
 
 ## Features
 
-- **Flowchart Construction**: Create flowcharts with nodes, links, and subgraphs.
-- **Flowchart Directionality**: Support for horizontal and vertical flowchart layouts.
-- **Mermaid.js Export**: Converts your flowchart structure into a Mermaid.js string that can be rendered directly in compatible tools.
-- **Node and Link Types**: Supports a variety of node shapes and link styles.
-- **Easy Linking**: Connect nodes with arrows, labels, and various line styles.
-- **Subgraph Support**: Group nodes into subgraphs for better organization.
+- **Node Types**: Various node types like process, decision, database, and more.
+- **Link Styles**: Support for different line styles such as solid, dotted, thick, and no-line.
+- **Arrow Types**: Add arrows to the origin, target, or both sides of a link.
+- **Subgraphs**: Create subgraphs to organize your flowchart hierarchically.
+- **Flowchart Directions**: Control the flow direction, including left-to-right, right-to-left, or top-to-bottom.
+- **Mermaid Export**: Generate Mermaid syntax to easily visualize flowcharts.
+
+## Installation
+
+To install the package, run:
+
+```bash
+go get github.com/andre-a-alves/flowchart
+```
 
 ## Example Usage
 
@@ -17,37 +27,35 @@ This package provides a simple yet powerful API for generating flowcharts in Mer
 package main
 
 import (
-    "fmt"
-    "flowchart"
+	"fmt"
+	
+	"github.com/andre-a-alves/flowchart"
 )
 
 func main() {
-    // Create basic nodes
-    start := flowchart.BasicNode("Start", flowchart.pointTo("Start Process"))
-    process := flowchart.BasicNode("Process", flowchart.pointTo("Execute Task"))
-    end := flowchart.BasicNode("End", flowchart.pointTo("End Process"))
+	// Create nodes
+	processNode := flowchart.ProcessNode("Process1", nil)
+	decisionNode := flowchart.DecisionNode("Decision1", nil)
 
-    // Create links between nodes
-    link1, _ := flowchart.BasicLink(process, flowchart.pointTo("Next"))
-    link2, _ := flowchart.BasicLink(end, flowchart.pointTo("Complete"))
+	// Create links
+	link := flowchart.SolidLink(decisionNode, nil)
 
-    // Add links to nodes
-    start.AddLink(link1)
-    process.AddLink(link2)
+	// Add link to node
+	processNode.AddLink(link)
 
-    // Create a flowchart and add nodes
-    chart := flowchart.BasicFlowchart()
-    chart.AddNode(start)
-    chart.AddNode(process)
-    chart.AddNode(end)
+	// Create flowchart
+	chart := flowchart.VerticalFlowchart(nil)
+	chart.AddNode(processNode)
 
-    // Generate the Mermaid.js output
-    fmt.Println(chart.ToMermaid())
+	// Output Mermaid syntax
+	fmt.Println(chart.ToMermaid())
 }
 ```
-## Installation
-```
-go get github.com/yourusername/flowchart
-```
+
+## Future Plans
+- Support for additional diagram formats (e.g., Graphviz, PlantUML)
+- Improved node and link customization options
+- More advanced flowchart layout controls
+
 ## License
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for more details.

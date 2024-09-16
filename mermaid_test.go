@@ -277,42 +277,42 @@ func TestNodeTypeEnum_toMermaidLeft(t *testing.T) {
 	}{
 		{
 			name:     "Terminator left",
-			nodeType: TypeTerminator,
+			nodeType: NodeTypeTerminator,
 			expected: "(",
 		},
 		{
 			name:     "Process left",
-			nodeType: TypeProcess,
+			nodeType: NodeTypeProcess,
 			expected: "[",
 		},
 		{
 			name:     "AlternateProcess left",
-			nodeType: TypeAlternateProcess,
+			nodeType: NodeTypeAlternateProcess,
 			expected: "([",
 		},
 		{
 			name:     "Subprocess left",
-			nodeType: TypeSubprocess,
+			nodeType: NodeTypeSubprocess,
 			expected: "[[",
 		},
 		{
 			name:     "Decision left",
-			nodeType: TypeDecision,
+			nodeType: NodeTypeDecision,
 			expected: "{",
 		},
 		{
 			name:     "InputOutput left",
-			nodeType: TypeInputOutput,
+			nodeType: NodeTypeInputOutput,
 			expected: "[/",
 		},
 		{
 			name:     "Connector left",
-			nodeType: TypeConnector,
+			nodeType: NodeTypeConnector,
 			expected: "((",
 		},
 		{
 			name:     "Database left",
-			nodeType: TypeDatabase,
+			nodeType: NodeTypeDatabase,
 			expected: "[(",
 		},
 		{
@@ -341,48 +341,48 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 	}{
 		{
 			name:     "Terminator right",
-			nodeType: TypeTerminator,
+			nodeType: NodeTypeTerminator,
 			expected: ")",
 		},
 		{
 			name:     "Process right",
-			nodeType: TypeProcess,
+			nodeType: NodeTypeProcess,
 			expected: "]",
 		},
 		{
 			name:     "AlternateProcess right",
-			nodeType: TypeAlternateProcess,
+			nodeType: NodeTypeAlternateProcess,
 			expected: "])",
 		},
 		{
 			name:     "Subprocess right",
-			nodeType: TypeSubprocess,
+			nodeType: NodeTypeSubprocess,
 			expected: "]]",
 		},
 		{
 			name:     "Decision right",
-			nodeType: TypeDecision,
+			nodeType: NodeTypeDecision,
 			expected: "}",
 		},
 		{
 			name:     "InputOutput right",
-			nodeType: TypeInputOutput,
-			expected: "/[",
+			nodeType: NodeTypeInputOutput,
+			expected: "/]",
 		},
 		{
 			name:     "Connector right",
-			nodeType: TypeConnector,
+			nodeType: NodeTypeConnector,
 			expected: "))",
 		},
 		{
 			name:     "Database right",
-			nodeType: TypeDatabase,
+			nodeType: NodeTypeDatabase,
 			expected: ")]",
 		},
 		{
 			name:     "Default right (invalid node type)",
 			nodeType: NodeTypeEnum(-1), // Unknown NodeTypeEnum
-			expected: "}",
+			expected: ")",
 		},
 	}
 
@@ -561,7 +561,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with no label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: nil,
 			},
@@ -572,7 +572,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with empty label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo(""),
 				Links: nil,
 			},
@@ -583,7 +583,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with label and no links",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: nil,
 			},
@@ -594,7 +594,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with links and no label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: []Link{
 					{
@@ -605,7 +605,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: pointTo("ignored node label"),
 							Links: nil,
 						},
@@ -619,7 +619,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with links and label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Label"),
 				Links: []Link{
 					{
@@ -630,7 +630,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -643,7 +643,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 			name: "Node with multiple links and label",
 			node: &Node{
 				Name:  "First Node",
-				Type:  TypeProcess,
+				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{
 					{
@@ -654,7 +654,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       nil,
 						TargetNode: &Node{
 							Name:  "Target Node One",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -667,7 +667,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
 							Name:  "Target Node Two",
-							Type:  TypeProcess,
+							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
 						},
@@ -678,10 +678,97 @@ func TestNode_toMermaidNode(t *testing.T) {
 			expected: "        FirstNode[Node Label];\n        FirstNode --> TargetNodeOne;\n        FirstNode o-. Link Label .-o TargetNodeTwo;\n",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.node.toMermaidNode(tt.indents)
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+
+	fixtureNodeName := "node"
+	fixtureLabel := pointTo("a label")
+
+	testTypes := []struct {
+		name     string
+		nodeName string
+		nodeType NodeTypeEnum
+		label    *string
+		expected string
+	}{
+		{
+			name:     "terminator",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeTerminator,
+			label:    fixtureLabel,
+			expected: "node(a label);\n",
+		},
+		{
+			name:     "process",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeProcess,
+			label:    fixtureLabel,
+			expected: "node[a label];\n",
+		},
+		{
+			name:     "alternate process",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeAlternateProcess,
+			label:    fixtureLabel,
+			expected: "node([a label]);\n",
+		},
+		{
+			name:     "subprocess",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeSubprocess,
+			label:    fixtureLabel,
+			expected: "node[[a label]];\n",
+		},
+		{
+			name:     "decision",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeDecision,
+			label:    fixtureLabel,
+			expected: "node{a label};\n",
+		},
+		{
+			name:     "input/output",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeInputOutput,
+			label:    fixtureLabel,
+			expected: "node[/a label/];\n",
+		},
+		{
+			name:     "connector",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeConnector,
+			label:    fixtureLabel,
+			expected: "node((a label));\n",
+		},
+		{
+			name:     "database",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeDatabase,
+			label:    fixtureLabel,
+			expected: "node[(a label)];\n",
+		},
+		{
+			name:     "invalid",
+			nodeName: fixtureNodeName,
+			nodeType: NodeTypeEnum(-1),
+			label:    fixtureLabel,
+			expected: "node(a label);\n",
+		},
+	}
+	for _, tt := range testTypes {
+		t.Run(tt.name, func(t *testing.T) {
+			node := &Node{
+				Name:  tt.nodeName,
+				Type:  tt.nodeType,
+				Label: tt.label,
+			}
+			got := node.toMermaidNode(0)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
 			}
@@ -845,20 +932,20 @@ flowchart LR;
 }
 
 func fixtureFlowchart() *Flowchart {
-	nodeOne := BasicNode("Node One", nil)
-	nodeTwo := BasicNode("Node Two", nil)
-	nodeThree := BasicNode("Node Three", nil)
-	nodeFour := BasicNode("Node Four", nil)
-	nodeFive := BasicNode("Node Five", nil)
-	nodeSix := BasicNode("Node Six", nil)
-	nodeSeven := BasicNode("Node Seven", nil)
-	nodeEight := BasicNode("Node Eight", nil)
+	nodeOne := ProcessNode("Node One", nil)
+	nodeTwo := ProcessNode("Node Two", nil)
+	nodeThree := ProcessNode("Node Three", nil)
+	nodeFour := ProcessNode("Node Four", nil)
+	nodeFive := ProcessNode("Node Five", nil)
+	nodeSix := ProcessNode("Node Six", nil)
+	nodeSeven := ProcessNode("Node Seven", nil)
+	nodeEight := ProcessNode("Node Eight", nil)
 
-	nodeOneLink := BasicLink(nodeTwo, nil)
-	nodeTwoLinkOne := BasicLink(nodeThree, nil)
-	nodeTwoLinkTwo := BasicLink(nodeFour, nil)
-	nodeFiveLink := BasicLink(nodeSix, nil)
-	nodeSevenLink := BasicLink(nodeEight, nil)
+	nodeOneLink := SolidLink(nodeTwo, nil)
+	nodeTwoLinkOne := SolidLink(nodeThree, nil)
+	nodeTwoLinkTwo := SolidLink(nodeFour, nil)
+	nodeFiveLink := SolidLink(nodeSix, nil)
+	nodeSevenLink := SolidLink(nodeEight, nil)
 
 	nodeOne.Links = []Link{nodeOneLink}
 	nodeTwo.Links = []Link{nodeTwoLinkOne, nodeTwoLinkTwo}

@@ -18,14 +18,14 @@ const (
 )
 
 const (
-	TypeTerminator NodeTypeEnum = iota
-	TypeProcess
-	TypeAlternateProcess
-	TypeSubprocess
-	TypeDecision
-	TypeInputOutput
-	TypeConnector
-	TypeDatabase
+	NodeTypeTerminator NodeTypeEnum = iota
+	NodeTypeProcess
+	NodeTypeAlternateProcess
+	NodeTypeSubprocess
+	NodeTypeDecision
+	NodeTypeInputOutput
+	NodeTypeConnector
+	NodeTypeDatabase
 )
 
 const (
@@ -65,7 +65,7 @@ type Flowchart struct {
 	Subgraphs []*Flowchart
 }
 
-func (n *Node) addLink(link Link) error {
+func (n *Node) AddLink(link Link) error {
 	if link.TargetNode == nil {
 		return fmt.Errorf("cannot add link with no target node")
 	}
@@ -73,20 +73,46 @@ func (n *Node) addLink(link Link) error {
 	return nil
 }
 
-func (f *Flowchart) addNode(node *Node) error {
+func (f *Flowchart) AddNode(node *Node) error {
+	for _, n := range f.Nodes {
+		if n.Name == node.Name {
+			return fmt.Errorf("cannot add duplicate subgraph")
+		}
+	}
 	f.Nodes = append(f.Nodes, node)
 	return nil
 }
 
-func (f *Flowchart) addSubgraph(subgraph *Flowchart) error {
+func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
+	for _, s := range f.Subgraphs {
+		if s.Title != nil && subgraph.Title != nil && *s.Title == *subgraph.Title {
+			return fmt.Errorf("cannot add duplicate subgraph")
+		}
+	}
 	f.Subgraphs = append(f.Subgraphs, subgraph)
 	return nil
 }
 
-func BasicLink(targetNode *Node, label *string) Link {
+func BlankLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeNone)
+}
+
+func SolidLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeSolid)
+}
+
+func DottedLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeDotted)
+}
+
+func ThickLink(targetNode *Node, label *string) Link {
+	return basicLink(targetNode, label, LineTypeThick)
+}
+
+func basicLink(targetNode *Node, label *string, lineType LineTypeEnum) Link {
 	return Link{
 		TargetNode:  targetNode,
-		LineType:    LineTypeSolid,
+		LineType:    lineType,
 		ArrowType:   ArrowTypeNormal,
 		OriginArrow: false,
 		TargetArrow: true,
@@ -94,19 +120,63 @@ func BasicLink(targetNode *Node, label *string) Link {
 	}
 }
 
-func BasicNode(name string, label *string) *Node {
+func TerminatorNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeTerminator)
+}
+
+func ProcessNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeProcess)
+}
+
+func AlternateProcessNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeAlternateProcess)
+}
+
+func SubprocessNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeSubprocess)
+}
+
+func DecisionNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeDecision)
+}
+
+func InputOutputNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeInputOutput)
+}
+
+func ConnectorNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeConnector)
+}
+
+func DatabaseNode(name string, label *string) *Node {
+	return basicNode(name, label, NodeTypeDatabase)
+}
+
+func basicNode(name string, label *string, typ NodeTypeEnum) *Node {
 	return &Node{
 		Name:  name,
-		Type:  TypeProcess,
+		Type:  typ,
 		Label: label,
 		Links: make([]Link, 0),
 	}
 }
 
-func BasicFlowchart() *Flowchart {
+func VerticalFlowchart(title *string) *Flowchart {
+	return basicFlowchart(title, DirectionVertical)
+}
+
+func LrFlowchart(title *string) *Flowchart {
+	return basicFlowchart(title, DirectionHorizontalRight)
+}
+
+func RlFlowchart(title *string) *Flowchart {
+	return basicFlowchart(title, DirectionHorizontalLeft)
+}
+
+func basicFlowchart(title *string, direction FlowchartDirectionEnum) *Flowchart {
 	return &Flowchart{
-		Direction: DirectionVertical,
-		Title:     nil,
+		Direction: direction,
+		Title:     title,
 		Nodes:     make([]*Node, 0),
 		Subgraphs: make([]*Flowchart, 0),
 	}

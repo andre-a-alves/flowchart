@@ -82,21 +82,21 @@ func (l LineTypeEnum) toMermaidBidirectional() string {
 
 func (n NodeTypeEnum) toMermaidLeft() string {
 	switch n {
-	case TypeTerminator:
+	case NodeTypeTerminator:
 		return "("
-	case TypeProcess:
+	case NodeTypeProcess:
 		return "["
-	case TypeAlternateProcess:
+	case NodeTypeAlternateProcess:
 		return "(["
-	case TypeSubprocess:
+	case NodeTypeSubprocess:
 		return "[["
-	case TypeDecision:
+	case NodeTypeDecision:
 		return "{"
-	case TypeInputOutput:
+	case NodeTypeInputOutput:
 		return "[/"
-	case TypeConnector:
+	case NodeTypeConnector:
 		return "(("
-	case TypeDatabase:
+	case NodeTypeDatabase:
 		return "[("
 	default:
 		return "("
@@ -105,24 +105,24 @@ func (n NodeTypeEnum) toMermaidLeft() string {
 
 func (n NodeTypeEnum) toMermaidRight() string {
 	switch n {
-	case TypeTerminator:
+	case NodeTypeTerminator:
 		return ")"
-	case TypeProcess:
+	case NodeTypeProcess:
 		return "]"
-	case TypeAlternateProcess:
+	case NodeTypeAlternateProcess:
 		return "])"
-	case TypeSubprocess:
+	case NodeTypeSubprocess:
 		return "]]"
-	case TypeDecision:
+	case NodeTypeDecision:
 		return "}"
-	case TypeInputOutput:
-		return "/["
-	case TypeConnector:
+	case NodeTypeInputOutput:
+		return "/]"
+	case NodeTypeConnector:
 		return "))"
-	case TypeDatabase:
+	case NodeTypeDatabase:
 		return ")]"
 	default:
-		return "}"
+		return ")"
 	}
 }
 
