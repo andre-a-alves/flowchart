@@ -107,11 +107,6 @@ func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
 	if f.containsName(*subgraph.Title) {
 		return fmt.Errorf("cannot add subgraph with already existing title")
 	}
-	for _, s := range f.Subgraphs {
-		if s.Title != nil && subgraph.Title != nil && *s.Title == *subgraph.Title {
-			return fmt.Errorf("cannot add duplicate subgraph")
-		}
-	}
 	f.Subgraphs = append(f.Subgraphs, subgraph)
 	return nil
 }
