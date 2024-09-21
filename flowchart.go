@@ -2,6 +2,7 @@ package flowchart
 
 import (
 	"fmt"
+	"slices"
 )
 
 type (
@@ -52,7 +53,7 @@ type Link struct {
 }
 
 type Node struct {
-	Name  string
+	name  string
 	Type  NodeTypeEnum
 	Label *string
 	Links []Link
@@ -73,17 +74,39 @@ func (n *Node) AddLink(link Link) error {
 	return nil
 }
 
-func (f *Flowchart) AddNode(node *Node) error {
+func (f *Flowchart) allNames() []string {
+	var names []string
+	if f.Title != nil {
+		names = append(names, *f.Title)
+	}
 	for _, n := range f.Nodes {
-		if n.Name == node.Name {
-			return fmt.Errorf("cannot add duplicate subgraph")
-		}
+		names = append(names, n.name)
+	}
+	for _, s := range f.Subgraphs {
+		names = append(names, s.allNames()...)
+	}
+	return names
+}
+
+func (f *Flowchart) containsName(name string) bool {
+	return slices.Contains(f.allNames(), name)
+}
+
+func (f *Flowchart) AddNode(node *Node) error {
+	if f.containsName(node.name) {
+		return fmt.Errorf("cannot add node with non-unique name")
 	}
 	f.Nodes = append(f.Nodes, node)
 	return nil
 }
 
 func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
+	if subgraph.Title == nil {
+		return fmt.Errorf("cannot add subgraph with no title")
+	}
+	if f.containsName(*subgraph.Title) {
+		return fmt.Errorf("cannot add subgraph with already existing title")
+	}
 	for _, s := range f.Subgraphs {
 		if s.Title != nil && subgraph.Title != nil && *s.Title == *subgraph.Title {
 			return fmt.Errorf("cannot add duplicate subgraph")
@@ -154,7 +177,7 @@ func DatabaseNode(name string, label *string) *Node {
 
 func basicNode(name string, label *string, typ NodeTypeEnum) *Node {
 	return &Node{
-		Name:  name,
+		name:  name,
 		Type:  typ,
 		Label: label,
 		Links: make([]Link, 0),

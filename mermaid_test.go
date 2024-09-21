@@ -398,7 +398,7 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 }
 
 func TestLink_toMermaid(t *testing.T) {
-	fixtureTargetNode := Node{Name: "Target Node"}
+	fixtureTargetNode := Node{name: "Target Node"}
 
 	tests := []struct {
 		name     string
@@ -544,7 +544,7 @@ func TestLink_toMermaid(t *testing.T) {
 			got := tt.link.toMermaid()
 
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
+				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
@@ -560,7 +560,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 		{
 			name: "Node with no label and no links",
 			node: &Node{
-				Name:  "First Node",
+				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: nil,
@@ -571,7 +571,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 		{
 			name: "Node with empty label and no links",
 			node: &Node{
-				Name:  "First Node",
+				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: pointTo(""),
 				Links: nil,
@@ -582,7 +582,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 		{
 			name: "Node with label and no links",
 			node: &Node{
-				Name:  "First Node",
+				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: nil,
@@ -593,7 +593,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 		{
 			name: "Node with links and no label",
 			node: &Node{
-				Name:  "First Node",
+				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: nil,
 				Links: []Link{
@@ -604,7 +604,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						TargetArrow: false,
 						Label:       nil,
 						TargetNode: &Node{
-							Name:  "Target Node",
+							name:  "Target Node",
 							Type:  NodeTypeProcess,
 							Label: pointTo("ignored node label"),
 							Links: nil,
@@ -618,7 +618,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 		{
 			name: "Node with links and label",
 			node: &Node{
-				Name:  "First Node",
+				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: pointTo("Label"),
 				Links: []Link{
@@ -629,7 +629,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						TargetArrow: true,
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
-							Name:  "Target Node",
+							name:  "Target Node",
 							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
@@ -642,7 +642,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 		{
 			name: "Node with multiple links and label",
 			node: &Node{
-				Name:  "First Node",
+				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
 				Links: []Link{
@@ -653,7 +653,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						TargetArrow: true,
 						Label:       nil,
 						TargetNode: &Node{
-							Name:  "Target Node One",
+							name:  "Target Node One",
 							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
@@ -666,7 +666,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						TargetArrow: true,
 						Label:       pointTo("Link Label"),
 						TargetNode: &Node{
-							Name:  "Target Node Two",
+							name:  "Target Node Two",
 							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
@@ -680,9 +680,9 @@ func TestNode_toMermaidNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.node.toMermaidNode(tt.indents)
+			got := tt.node.toMermaid(tt.indents)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
+				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
@@ -764,13 +764,13 @@ func TestNode_toMermaidNode(t *testing.T) {
 	for _, tt := range testTypes {
 		t.Run(tt.name, func(t *testing.T) {
 			node := &Node{
-				Name:  tt.nodeName,
+				name:  tt.nodeName,
 				Type:  tt.nodeType,
 				Label: tt.label,
 			}
-			got := node.toMermaidNode(0)
+			got := node.toMermaid(0)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaidNode() mismatch (-expected +got):\n%s", diff)
+				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
@@ -788,7 +788,7 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 			flowchart: &Flowchart{
 				Direction: DirectionHorizontalRight,
 				Title:     nil,
-				Nodes:     []*Node{{Name: "Node One"}},
+				Nodes:     []*Node{{name: "Node One"}},
 				Subgraphs: nil,
 			},
 			indents:  1,
@@ -800,8 +800,8 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 				Direction: DirectionVertical,
 				Title:     pointTo("Main Title"),
 				Nodes: []*Node{
-					{Name: "First Node"},
-					{Name: "Second Node"},
+					{name: "First Node"},
+					{name: "Second Node"},
 				},
 				Subgraphs: []*Flowchart{},
 			},
@@ -813,17 +813,17 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 			flowchart: &Flowchart{
 				Direction: DirectionVertical,
 				Title:     pointTo("Main Title"),
-				Nodes:     []*Node{{Name: "First Node"}},
+				Nodes:     []*Node{{name: "First Node"}},
 				Subgraphs: []*Flowchart{
 					{
 						Direction: DirectionHorizontalLeft,
 						Title:     pointTo("Subgraph One"),
-						Nodes:     []*Node{{Name: "Second Node"}},
+						Nodes:     []*Node{{name: "Second Node"}},
 					},
 					{
 						Direction: DirectionHorizontalRight,
 						Title:     pointTo("Subgraph Two"),
-						Nodes:     []*Node{{Name: "Third Node"}},
+						Nodes:     []*Node{{name: "Third Node"}},
 					},
 				},
 			},
@@ -876,7 +876,7 @@ func TestFlowchart_ToMermaid(t *testing.T) {
 			flowchart: &Flowchart{
 				Direction: DirectionHorizontalRight,
 				Title:     nil,
-				Nodes:     []*Node{{Name: "Node One"}},
+				Nodes:     []*Node{{name: "Node One"}},
 				Subgraphs: nil,
 			},
 			expected: "flowchart LR;\n\n    NodeOne;\n",

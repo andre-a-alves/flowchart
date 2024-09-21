@@ -134,7 +134,7 @@ func (l Link) toMermaid() string {
 	line := l.LineType.toMermaidBidirectional()
 
 	if l.LineType == LineTypeNone {
-		return fmt.Sprintf("%s %s", line, removeSpaces(l.TargetNode.Name))
+		return fmt.Sprintf("%s %s", line, removeSpaces(l.TargetNode.name))
 	}
 
 	if (l.OriginArrow || l.TargetArrow) && (l.LineType == LineTypeSolid || l.LineType == LineTypeThick) {
@@ -153,19 +153,19 @@ func (l Link) toMermaid() string {
 		line = fmt.Sprintf("%s %s %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
 	}
 
-	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.TargetNode.Name))
+	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.TargetNode.name))
 }
 
-func (n *Node) toMermaidNode(indents int) string {
+func (n *Node) toMermaid(indents int) string {
 	indentSpaces := strings.Repeat(" ", 4*indents)
 	var sb strings.Builder
 
 	if n.Label == nil || *n.Label == "" {
-		sb.WriteString(fmt.Sprintf("%s%s;\n", indentSpaces, removeSpaces(n.Name)))
+		sb.WriteString(fmt.Sprintf("%s%s;\n", indentSpaces, removeSpaces(n.name)))
 	} else {
 		sb.WriteString(fmt.Sprintf("%s%s%s%s%s;\n",
 			indentSpaces,
-			removeSpaces(n.Name),
+			removeSpaces(n.name),
 			n.Type.toMermaidLeft(),
 			*n.Label,
 			n.Type.toMermaidRight(),
@@ -174,7 +174,7 @@ func (n *Node) toMermaidNode(indents int) string {
 	for _, link := range n.Links {
 		sb.WriteString(fmt.Sprintf("%s%s %s;\n",
 			indentSpaces,
-			removeSpaces(n.Name),
+			removeSpaces(n.name),
 			link.toMermaid(),
 		))
 	}
@@ -187,7 +187,7 @@ func (f *Flowchart) toMermaid(indents int) string {
 
 	// nodes
 	for _, node := range f.Nodes {
-		sb.WriteString(fmt.Sprintf("\n%s", node.toMermaidNode(indents)))
+		sb.WriteString(fmt.Sprintf("\n%s", node.toMermaid(indents)))
 	}
 
 	// subgraphs
