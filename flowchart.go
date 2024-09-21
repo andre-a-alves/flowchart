@@ -6,14 +6,14 @@ import (
 )
 
 type (
-	FlowchartDirectionEnum int
-	NodeTypeEnum           int
-	LineTypeEnum           int
-	ArrowTypeEnum          int
+	DirectionEnum int
+	NodeTypeEnum  int
+	LineTypeEnum  int
+	ArrowTypeEnum int
 )
 
 const (
-	DirectionHorizontalRight FlowchartDirectionEnum = iota
+	DirectionHorizontalRight DirectionEnum = iota
 	DirectionHorizontalLeft
 	DirectionVertical
 )
@@ -60,7 +60,7 @@ type Node struct {
 }
 
 type Flowchart struct {
-	Direction FlowchartDirectionEnum
+	Direction DirectionEnum
 	Title     *string
 	Nodes     []*Node
 	Subgraphs []*Flowchart
@@ -191,7 +191,7 @@ func RlFlowchart(title *string) *Flowchart {
 	return basicFlowchart(title, DirectionHorizontalLeft)
 }
 
-func basicFlowchart(title *string, direction FlowchartDirectionEnum) *Flowchart {
+func basicFlowchart(title *string, direction DirectionEnum) *Flowchart {
 	return &Flowchart{
 		Direction: direction,
 		Title:     title,

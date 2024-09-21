@@ -9,7 +9,7 @@ import (
 func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 	tests := []struct {
 		name      string
-		direction FlowchartDirectionEnum
+		direction DirectionEnum
 		expected  string
 	}{
 		{
@@ -29,8 +29,8 @@ func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 		},
 		{
 			name:      "Unknown direction (fallback)",
-			direction: FlowchartDirectionEnum(999), // Unknown value to test fallback
-			expected:  "TB",                        // Default fallback
+			direction: DirectionEnum(999), // Unknown value to test fallback
+			expected:  "TB",               // Default fallback
 		},
 	}
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (f FlowchartDirectionEnum) toMermaid() string {
+func (f DirectionEnum) toMermaid() string {
 	switch f {
 	case DirectionHorizontalRight:
 		return "LR"

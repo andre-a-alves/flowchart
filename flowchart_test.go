@@ -481,7 +481,7 @@ func TestBasicFlowchart(t *testing.T) {
 
 	testBasicFlowchart := []struct {
 		name      string
-		direction FlowchartDirectionEnum
+		direction DirectionEnum
 		title     *string
 		expected  *Flowchart
 	}{
