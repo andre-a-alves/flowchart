@@ -16,11 +16,8 @@ jobs:
       with:
         go-version: '1.23'
 
-    - name: Ensure go.mod is tidy
+    - name: Ensure go.mod is tidy and download dependencies
       run: go mod tidy
-
-    - name: Download Dependencies
-      run: go mod download
 
     - name: Build
       run: go build -v ./...
