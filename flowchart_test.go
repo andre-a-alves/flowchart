@@ -16,22 +16,22 @@ func TestNode_AddLink(t *testing.T) {
 	}{
 		{
 			name: "Add valid link",
-			node: Node{Name: "StartNode", Links: []Link{}},
+			node: Node{name: "StartNode", Links: []Link{}},
 			link: Link{
-				TargetNode: &Node{Name: "TargetNode"},
+				TargetNode: &Node{name: "TargetNode"},
 				Label:      pointTo("LinkLabel"),
 			},
 			expectedErr: nil,
 			expectedLinks: []Link{
 				{
-					TargetNode: &Node{Name: "TargetNode"},
+					TargetNode: &Node{name: "TargetNode"},
 					Label:      pointTo("LinkLabel"),
 				},
 			},
 		},
 		{
 			name: "Add invalid link with nil TargetNode",
-			node: Node{Name: "StartNode", Links: []Link{}},
+			node: Node{name: "StartNode", Links: []Link{}},
 			link: Link{
 				TargetNode: nil,
 				Label:      nil,
@@ -49,7 +49,7 @@ func TestNode_AddLink(t *testing.T) {
 				t.Errorf("AddLink() error mismatch (-want +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tt.expectedLinks, tt.node.Links); diff != "" {
+			if diff := cmp.Diff(tt.expectedLinks, tt.node.Links, cmp.AllowUnexported(Node{})); diff != "" {
 				t.Errorf("AddLink() Links mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -65,18 +65,37 @@ func TestFlowchart_AddNode(t *testing.T) {
 		expectedNodes []*Node
 	}{
 		{
-			name:          "Add subgraph",
+			name:          "Add node",
 			flowchart:     &Flowchart{},
-			node:          &Node{Name: "Singleton"},
+			node:          &Node{name: "Singleton"},
 			expectedErr:   nil,
-			expectedNodes: []*Node{{Name: "Singleton"}},
+			expectedNodes: []*Node{{name: "Singleton"}},
 		},
 		{
-			name:          "Add duplicate subgraph",
-			flowchart:     &Flowchart{Nodes: []*Node{{Name: "Singleton"}}},
-			node:          &Node{Name: "Singleton"},
-			expectedErr:   fmt.Errorf("cannot add duplicate subgraph"),
-			expectedNodes: []*Node{{Name: "Singleton"}},
+			name:          "Add duplicate node",
+			flowchart:     &Flowchart{Nodes: []*Node{{name: "Singleton"}}},
+			node:          &Node{name: "Singleton"},
+			expectedErr:   fmt.Errorf("cannot add node with non-unique name"),
+			expectedNodes: []*Node{{name: "Singleton"}},
+		},
+		{
+			name:          "Add node with subgraph names",
+			flowchart:     &Flowchart{Subgraphs: []*Flowchart{LrFlowchart(pointTo("Singleton"))}},
+			node:          &Node{name: "Singleton"},
+			expectedErr:   fmt.Errorf("cannot add node with non-unique name"),
+			expectedNodes: nil,
+		},
+		{
+			name: "Add node with duplicate in subgraph",
+			flowchart: &Flowchart{
+				Subgraphs: []*Flowchart{{
+					Direction: DirectionVertical,
+					Nodes:     []*Node{{name: "Singleton"}},
+				}},
+			},
+			node:          &Node{name: "Singleton"},
+			expectedErr:   fmt.Errorf("cannot add node with non-unique name"),
+			expectedNodes: nil,
 		},
 	}
 
@@ -88,7 +107,7 @@ func TestFlowchart_AddNode(t *testing.T) {
 				t.Errorf("AddLink() error mismatch (-want +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tt.expectedNodes, tt.flowchart.Nodes); diff != "" {
+			if diff := cmp.Diff(tt.expectedNodes, tt.flowchart.Nodes, cmp.AllowUnexported(Node{})); diff != "" {
 				t.Errorf("AddNode() Nodes mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -111,10 +130,17 @@ func TestFlowchart_AddSubgraph(t *testing.T) {
 			expectedSubgraphs: []*Flowchart{{Title: pointTo("Singleton")}},
 		},
 		{
+			name:              "Add subgraph with no title",
+			flowchart:         &Flowchart{},
+			subgraph:          &Flowchart{},
+			expectedErr:       fmt.Errorf("cannot add subgraph with no title"),
+			expectedSubgraphs: nil,
+		},
+		{
 			name:              "Add duplicate subgraph",
 			flowchart:         &Flowchart{Subgraphs: []*Flowchart{{Title: pointTo("Singleton")}}},
 			subgraph:          &Flowchart{Title: pointTo("Singleton")},
-			expectedErr:       fmt.Errorf("cannot add duplicate subgraph"),
+			expectedErr:       fmt.Errorf("cannot add subgraph with already existing title"),
 			expectedSubgraphs: []*Flowchart{{Title: pointTo("Singleton")}},
 		},
 	}
@@ -134,6 +160,77 @@ func TestFlowchart_AddSubgraph(t *testing.T) {
 	}
 }
 
+func TestFlowchart_allNames(t *testing.T) {
+	tests := []struct {
+		name      string
+		flowchart Flowchart
+		expected  []string
+	}{
+		{
+			name: "Flowchart with title, nodes, and subgraphs",
+			flowchart: Flowchart{
+				Title: stringPtr("Main Flowchart"),
+				Nodes: []*Node{
+					{name: "Node1"},
+					{name: "Node2"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: stringPtr("Subgraph1"),
+						Nodes: []*Node{
+							{name: "SubNode1"},
+							{name: "SubNode2"},
+						},
+					},
+				},
+			},
+			expected: []string{"Main Flowchart", "Node1", "Node2", "Subgraph1", "SubNode1", "SubNode2"},
+		},
+		{
+			name: "Flowchart without title",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "Node1"},
+				},
+			},
+			expected: []string{"Node1"},
+		},
+		{
+			name: "Flowchart with nested subgraphs",
+			flowchart: Flowchart{
+				Title: stringPtr("Main Flowchart"),
+				Subgraphs: []*Flowchart{
+					{
+						Title: stringPtr("Subgraph1"),
+						Subgraphs: []*Flowchart{
+							{
+								Title: stringPtr("NestedSubgraph"),
+								Nodes: []*Node{
+									{name: "NestedNode1"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"Main Flowchart", "Subgraph1", "NestedSubgraph", "NestedNode1"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := test.flowchart.allNames()
+			if !cmp.Equal(result, test.expected) {
+				t.Errorf("unexpected result. got: %v, expected: %v", result, test.expected)
+			}
+		})
+	}
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
 func TestLinks(t *testing.T) {
 	fixtureLink := func(mods ...func(l *Link)) Link {
 		link := &Link{
@@ -150,7 +247,7 @@ func TestLinks(t *testing.T) {
 		return *link
 	}
 	fixtureLabel := pointTo("Link Label")
-	fixtureTarget := &Node{Name: "Node1"}
+	fixtureTarget := &Node{name: "Node1"}
 
 	testBasicLink := []struct {
 		name       string
@@ -248,7 +345,7 @@ func TestNodes(t *testing.T) {
 	fixtureNodeName := "node"
 	fixtureNode := func(mods ...func(l *Node)) *Node {
 		node := &Node{
-			Name:  fixtureNodeName,
+			name:  fixtureNodeName,
 			Type:  NodeTypeProcess,
 			Label: nil,
 			Links: []Link{},
