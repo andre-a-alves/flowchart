@@ -979,3 +979,36 @@ func maskUUIDsInSubgraph(s string) string {
 	// Replace each "subgraph " followed by the 6-character UUID with "subgraph UUID"
 	return re.ReplaceAllString(s, "subgraph UUID")
 }
+
+func TestIsValidMermaidNodeName(t *testing.T) {
+	testCases := []struct {
+		name     string
+		testCase string
+		expected bool
+	}{
+		{
+			"extreme valid case",
+			"Valid test-case_1",
+			true,
+		},
+		{
+			"parenthesis",
+			"(",
+			false,
+		},
+		{
+			"random special character",
+			"@",
+			false,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isValidMermaidNodeName(tt.testCase)
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("isValidMermaidNodeName() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+}

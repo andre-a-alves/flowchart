@@ -3,6 +3,7 @@ package flowchart
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"regexp"
 	"strings"
 )
 
@@ -242,4 +243,15 @@ func (f *Flowchart) ToMermaid() string {
 	sb.WriteString(f.toMermaid(1))
 
 	return sb.String()
+}
+
+func validateMermaid(f *Flowchart) bool {
+	return false
+}
+
+func isValidMermaidNodeName(s string) bool {
+	// Define regex for a valid Mermaid.js node name
+	// Allows letters, digits, underscores, and dashes only
+	re := regexp.MustCompile(`^[a-zA-Z0-9_\- ]+$`)
+	return re.MatchString(s)
 }
