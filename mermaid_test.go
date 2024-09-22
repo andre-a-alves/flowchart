@@ -397,7 +397,7 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 }
 
 func TestLink_toMermaid(t *testing.T) {
-	fixtureTargetNode := Node{name: "Target Node"}
+	fixtureTargetNode := Node{name: "Target"}
 
 	tests := []struct {
 		name     string
@@ -412,7 +412,7 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: true,
 				Label:       pointTo("some label"),
-				TargetNode:  nil,
+				Target:      nil,
 			},
 			expected: "",
 		},
@@ -424,9 +424,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeNone,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "~~~ TargetNode",
+			expected: "~~~ Target",
 		},
 		{
 			name: "solid line - no label",
@@ -436,9 +436,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "--- TargetNode",
+			expected: "--- Target",
 		},
 		{
 			name: "solid line - with label",
@@ -448,9 +448,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-- \"some label\" -- TargetNode",
+			expected: "-- \"some label\" -- Target",
 		},
 		{
 			name: "dotted line - no label",
@@ -460,9 +460,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeDotted,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-.- TargetNode",
+			expected: "-.- Target",
 		},
 		{
 			name: "dotted line - with label",
@@ -472,9 +472,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeDotted,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-. \"some label\" .- TargetNode",
+			expected: "-. \"some label\" .- Target",
 		},
 		{
 			name: "thick line - no label",
@@ -484,9 +484,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeThick,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "=== TargetNode",
+			expected: "=== Target",
 		},
 		{
 			name: "thick line - with label",
@@ -496,9 +496,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeThick,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "== \"some label\" == TargetNode",
+			expected: "== \"some label\" == Target",
 		},
 		{
 			name: "only origin arrow yes",
@@ -508,9 +508,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-- TargetNode",
+			expected: "-- Target",
 		},
 		{
 			name: "target arrow yes",
@@ -520,9 +520,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: true,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "--> TargetNode",
+			expected: "--> Target",
 		},
 		{
 			name: "both arrows",
@@ -532,9 +532,9 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: true,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "<--> TargetNode",
+			expected: "<--> Target",
 		},
 	}
 
@@ -602,8 +602,8 @@ func TestNode_toMermaidNode(t *testing.T) {
 						LineType:    LineTypeSolid,
 						TargetArrow: true,
 						Label:       nil,
-						TargetNode: &Node{
-							name:  "Target Node",
+						Target: &Node{
+							name:  "Target",
 							Type:  NodeTypeProcess,
 							Label: pointTo("ignored node label"),
 							Links: nil,
@@ -612,7 +612,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 				},
 			},
 			indents:  0,
-			expected: "FirstNode;\nFirstNode --> TargetNode;\n",
+			expected: "FirstNode;\nFirstNode --> Target;\n",
 		},
 		{
 			name: "Node with links and label",
@@ -627,8 +627,8 @@ func TestNode_toMermaidNode(t *testing.T) {
 						LineType:    LineTypeDotted,
 						TargetArrow: true,
 						Label:       pointTo("Link Label"),
-						TargetNode: &Node{
-							name:  "Target Node",
+						Target: &Node{
+							name:  "Target",
 							Type:  NodeTypeProcess,
 							Label: nil,
 							Links: nil,
@@ -636,7 +636,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 					},
 				}},
 			indents:  1,
-			expected: "    FirstNode[\"Label\"];\n    FirstNode -. \"Link Label\" .-x TargetNode;\n",
+			expected: "    FirstNode[\"Label\"];\n    FirstNode -. \"Link Label\" .-x Target;\n",
 		},
 		{
 			name: "Node with multiple links and label",
@@ -651,7 +651,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						LineType:    LineTypeSolid,
 						TargetArrow: true,
 						Label:       nil,
-						TargetNode: &Node{
+						Target: &Node{
 							name:  "Target Node One",
 							Type:  NodeTypeProcess,
 							Label: nil,
@@ -664,7 +664,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 						LineType:    LineTypeDotted,
 						TargetArrow: true,
 						Label:       pointTo("Link Label"),
-						TargetNode: &Node{
+						Target: &Node{
 							name:  "Target Node Two",
 							Type:  NodeTypeProcess,
 							Label: nil,

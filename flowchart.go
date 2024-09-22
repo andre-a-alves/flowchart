@@ -44,12 +44,27 @@ const (
 )
 
 type Link struct {
-	TargetNode  *Node
+	Target      Linkable
 	LineType    LineTypeEnum
 	ArrowType   ArrowTypeEnum
 	OriginArrow bool
 	TargetArrow bool
 	Label       *string
+}
+
+type Linkable interface {
+	nodeName() string
+}
+
+func (n *Node) nodeName() string {
+	return n.name
+}
+
+func (f *Flowchart) nodeName() string {
+	if f.Title == nil {
+		return ""
+	}
+	return *f.Title
 }
 
 type Node struct {
@@ -67,7 +82,7 @@ type Flowchart struct {
 }
 
 func (n *Node) AddLink(link Link) error {
-	if link.TargetNode == nil {
+	if link.Target == nil {
 		return fmt.Errorf("cannot add link with no target node")
 	}
 	n.Links = append(n.Links, link)
@@ -111,25 +126,25 @@ func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
 	return nil
 }
 
-func BlankLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeNone)
+func BlankLink(target Linkable, label *string) Link {
+	return basicLink(target, label, LineTypeNone)
 }
 
-func SolidLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeSolid)
+func SolidLink(target Linkable, label *string) Link {
+	return basicLink(target, label, LineTypeSolid)
 }
 
-func DottedLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeDotted)
+func DottedLink(target Linkable, label *string) Link {
+	return basicLink(target, label, LineTypeDotted)
 }
 
-func ThickLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeThick)
+func ThickLink(target Linkable, label *string) Link {
+	return basicLink(target, label, LineTypeThick)
 }
 
-func basicLink(targetNode *Node, label *string, lineType LineTypeEnum) Link {
+func basicLink(target Linkable, label *string, lineType LineTypeEnum) Link {
 	return Link{
-		TargetNode:  targetNode,
+		Target:      target,
 		LineType:    lineType,
 		ArrowType:   ArrowTypeNormal,
 		OriginArrow: false,

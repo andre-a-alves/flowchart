@@ -18,23 +18,23 @@ func TestNode_AddLink(t *testing.T) {
 			name: "Add valid link",
 			node: Node{name: "StartNode", Links: []Link{}},
 			link: Link{
-				TargetNode: &Node{name: "TargetNode"},
-				Label:      pointTo("LinkLabel"),
+				Target: &Node{name: "Target"},
+				Label:  pointTo("LinkLabel"),
 			},
 			expectedErr: nil,
 			expectedLinks: []Link{
 				{
-					TargetNode: &Node{name: "TargetNode"},
-					Label:      pointTo("LinkLabel"),
+					Target: &Node{name: "Target"},
+					Label:  pointTo("LinkLabel"),
 				},
 			},
 		},
 		{
-			name: "Add invalid link with nil TargetNode",
+			name: "Add invalid link with nil Target",
 			node: Node{name: "StartNode", Links: []Link{}},
 			link: Link{
-				TargetNode: nil,
-				Label:      nil,
+				Target: nil,
+				Label:  nil,
 			},
 			expectedErr:   fmt.Errorf("cannot add link with no target node"),
 			expectedLinks: []Link{},
@@ -234,7 +234,7 @@ func stringPtr(s string) *string {
 func TestLinks(t *testing.T) {
 	fixtureLink := func(mods ...func(l *Link)) Link {
 		link := &Link{
-			TargetNode:  nil,
+			Target:      nil,
 			LineType:    LineTypeSolid,
 			ArrowType:   ArrowTypeNormal,
 			OriginArrow: false,
@@ -263,6 +263,7 @@ func TestLinks(t *testing.T) {
 			lineType:   LineTypeSolid,
 			expected: fixtureLink(func(l *Link) {
 				l.Label = fixtureLabel
+				l.Target = (*Node)(nil)
 			}),
 		},
 		{
@@ -271,7 +272,7 @@ func TestLinks(t *testing.T) {
 			label:      nil,
 			lineType:   LineTypeSolid,
 			expected: fixtureLink(func(l *Link) {
-				l.TargetNode = fixtureTarget
+				l.Target = fixtureTarget
 			}),
 		},
 		{
@@ -280,7 +281,7 @@ func TestLinks(t *testing.T) {
 			label:      fixtureLabel,
 			lineType:   LineTypeDotted,
 			expected: fixtureLink(func(l *Link) {
-				l.TargetNode = fixtureTarget
+				l.Target = fixtureTarget
 				l.Label = fixtureLabel
 				l.LineType = LineTypeDotted
 			}),
@@ -298,7 +299,7 @@ func TestLinks(t *testing.T) {
 
 	testLinkTypes := []struct {
 		name     string
-		function func(*Node, *string) Link
+		function func(Linkable, *string) Link
 		expected Link
 	}{
 		{

@@ -127,14 +127,14 @@ func (n NodeTypeEnum) toMermaidRight() string {
 }
 
 func (l Link) toMermaid() string {
-	if l.TargetNode == nil {
+	if l.Target == nil {
 		return ""
 	}
 
 	line := l.LineType.toMermaidBidirectional()
 
 	if l.LineType == LineTypeNone {
-		return fmt.Sprintf("%s %s", line, removeSpaces(l.TargetNode.name))
+		return fmt.Sprintf("%s %s", line, removeSpaces(l.Target.nodeName()))
 	}
 
 	if (l.OriginArrow || l.TargetArrow) && (l.LineType == LineTypeSolid || l.LineType == LineTypeThick) {
@@ -154,7 +154,7 @@ func (l Link) toMermaid() string {
 		line = fmt.Sprintf("%s \"%s\" %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
 	}
 
-	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.TargetNode.name))
+	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.Target.nodeName()))
 }
 
 func (n *Node) toMermaid(indents int) string {
