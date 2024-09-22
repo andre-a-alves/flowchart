@@ -980,6 +980,127 @@ func maskUUIDsInSubgraph(s string) string {
 	return re.ReplaceAllString(s, "subgraph UUID")
 }
 
+func TestHasValidMermaidNames(t *testing.T) {
+	testCases := []struct {
+		name      string
+		flowchart Flowchart
+		expected  bool
+	}{
+		{
+			name: "happy path",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "ValidNode1"},
+					{name: "Valid_Node_2"},
+					{name: "Valid-Node-3"},
+					{name: "Valid Node 4"}, // With space
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo("Subgraph1"),
+						Nodes: []*Node{
+							{name: "SubNode1"},
+							{name: "SubNode2"},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Invalid node name with special character",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "ValidNode"},
+					{name: "Invalid@Node"},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Subgraph with invalid node name",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo("Subgraph1"),
+						Nodes: []*Node{
+							{name: "ValidSubNode"},
+							{name: "Invalid!SubNode"},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Subgraph with no title",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: nil,
+						Nodes: []*Node{
+							{name: "ValidSubNode"},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Empty subgraph title",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo(""),
+						Nodes: []*Node{
+							{name: "ValidSubNode"},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "nested subgraph",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo("Valid Subgraph"),
+						Subgraphs: []*Flowchart{{
+							Title: pointTo("Also Valid Subgraph"),
+							Nodes: []*Node{
+								{name: "Inv@alid"},
+							},
+						}},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := hasValidMermaidNames(&tc.flowchart)
+			if result != tc.expected {
+				t.Errorf("Expected %v, got %v", tc.expected, result)
+			}
+		})
+	}
+}
+
 func TestIsValidMermaidNodeName(t *testing.T) {
 	testCases := []struct {
 		name     string

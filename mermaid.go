@@ -245,8 +245,18 @@ func (f *Flowchart) ToMermaid() string {
 	return sb.String()
 }
 
-func validateMermaid(f *Flowchart) bool {
-	return false
+func hasValidMermaidNames(f *Flowchart) bool {
+	for _, node := range f.Nodes {
+		if !isValidMermaidNodeName(node.name) {
+			return false
+		}
+	}
+	for _, subgraph := range f.Subgraphs {
+		if subgraph.Title == nil || *subgraph.Title == "" || !hasValidMermaidNames(subgraph) {
+			return false
+		}
+	}
+	return true
 }
 
 func isValidMermaidNodeName(s string) bool {
