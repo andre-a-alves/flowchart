@@ -150,7 +150,7 @@ func (l Link) toMermaid() string {
 	}
 
 	if l.Label != nil && *l.Label != "" {
-		line = fmt.Sprintf("%s %s %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
+		line = fmt.Sprintf("%s \"%s\" %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
 	}
 
 	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.TargetNode.name))
@@ -163,7 +163,7 @@ func (n *Node) toMermaid(indents int) string {
 	if n.Label == nil || *n.Label == "" {
 		sb.WriteString(fmt.Sprintf("%s%s;\n", indentSpaces, removeSpaces(n.name)))
 	} else {
-		sb.WriteString(fmt.Sprintf("%s%s%s%s%s;\n",
+		sb.WriteString(fmt.Sprintf("%s%s%s\"%s\"%s;\n",
 			indentSpaces,
 			removeSpaces(n.name),
 			n.Type.toMermaidLeft(),
