@@ -228,7 +228,11 @@ func (f *Flowchart) toMermaid(indents int, subgraph bool) string {
 }
 
 func (f *Flowchart) ToMermaid() string {
-	return f.toMermaid(0, false)
+	if hasValidMermaidNames(f) {
+		return f.toMermaid(0, false)
+	}
+	// TOOD: Test this condition
+	return "invalid mermaid string"
 }
 
 func hasValidMermaidNames(f *Flowchart) bool {
