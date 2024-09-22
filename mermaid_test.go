@@ -501,7 +501,7 @@ func TestLink_toMermaid(t *testing.T) {
 			expected: "== \"some label\" == TargetNode",
 		},
 		{
-			name: "origin arrow yes",
+			name: "only origin arrow yes",
 			link: Link{
 				ArrowType:   ArrowTypeNormal,
 				OriginArrow: true,
@@ -510,7 +510,7 @@ func TestLink_toMermaid(t *testing.T) {
 				Label:       nil,
 				TargetNode:  &fixtureTargetNode,
 			},
-			expected: "<-- TargetNode",
+			expected: "-- TargetNode",
 		},
 		{
 			name: "target arrow yes",
@@ -598,9 +598,9 @@ func TestNode_toMermaidNode(t *testing.T) {
 				Links: []Link{
 					{
 						ArrowType:   ArrowTypeNormal,
-						OriginArrow: true,
+						OriginArrow: false,
 						LineType:    LineTypeSolid,
-						TargetArrow: false,
+						TargetArrow: true,
 						Label:       nil,
 						TargetNode: &Node{
 							name:  "Target Node",
@@ -612,7 +612,7 @@ func TestNode_toMermaidNode(t *testing.T) {
 				},
 			},
 			indents:  0,
-			expected: "FirstNode;\nFirstNode <-- TargetNode;\n",
+			expected: "FirstNode;\nFirstNode --> TargetNode;\n",
 		},
 		{
 			name: "Node with links and label",

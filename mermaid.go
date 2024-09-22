@@ -141,12 +141,13 @@ func (l Link) toMermaid() string {
 		line = line[:2]
 	}
 	originArrow := ""
-	if l.OriginArrow {
-		originArrow = l.ArrowType.toMermaidOrigin()
-	}
 	targetArrow := ""
 	if l.TargetArrow {
 		targetArrow = l.ArrowType.toMermaidTarget()
+		// arrows cannot be only from target to origin
+		if l.OriginArrow {
+			originArrow = l.ArrowType.toMermaidOrigin()
+		}
 	}
 
 	if l.Label != nil && *l.Label != "" {
