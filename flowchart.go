@@ -44,6 +44,7 @@ const (
 )
 
 type Link struct {
+	Origin      Linkable
 	Target      Linkable
 	LineType    LineTypeEnum
 	ArrowType   ArrowTypeEnum
@@ -79,13 +80,17 @@ type Flowchart struct {
 	Title     *string
 	Nodes     []*Node
 	Subgraphs []*Flowchart
+	Links     []Link
 }
 
-func (n *Node) AddLink(link Link) error {
-	if link.Target == nil {
+func (f *Flowchart) AddLink(link Link) error {
+	if link.Target == (Linkable)(nil) {
 		return fmt.Errorf("cannot add link with no target node")
 	}
-	n.Links = append(n.Links, link)
+	if link.Origin == (Linkable)(nil) {
+		return fmt.Errorf("cannot add link with no origin node")
+	}
+	f.Links = append(f.Links, link)
 	return nil
 }
 
