@@ -72,7 +72,6 @@ type Node struct {
 	name  string
 	Type  NodeTypeEnum
 	Label *string
-	Links []Link
 }
 
 type Flowchart struct {
@@ -131,24 +130,25 @@ func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
 	return nil
 }
 
-func BlankLink(target Linkable, label *string) Link {
-	return basicLink(target, label, LineTypeNone)
+func BlankLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeNone)
 }
 
-func SolidLink(target Linkable, label *string) Link {
-	return basicLink(target, label, LineTypeSolid)
+func SolidLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeSolid)
 }
 
-func DottedLink(target Linkable, label *string) Link {
-	return basicLink(target, label, LineTypeDotted)
+func DottedLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeDotted)
 }
 
-func ThickLink(target Linkable, label *string) Link {
-	return basicLink(target, label, LineTypeThick)
+func ThickLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeThick)
 }
 
-func basicLink(target Linkable, label *string, lineType LineTypeEnum) Link {
+func basicLink(origin, target Linkable, label *string, lineType LineTypeEnum) Link {
 	return Link{
+		Origin:      origin,
 		Target:      target,
 		LineType:    lineType,
 		ArrowType:   ArrowTypeNormal,
@@ -195,7 +195,6 @@ func basicNode(name string, label *string, typ NodeTypeEnum) *Node {
 		name:  name,
 		Type:  typ,
 		Label: label,
-		Links: make([]Link, 0),
 	}
 }
 
