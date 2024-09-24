@@ -468,13 +468,6 @@ func TestRenderMermaidNode(t *testing.T) {
 			expected: "node[\"a label\"];\n",
 		},
 		{
-			name:     "alternate process",
-			nodeName: fixtureNodeName,
-			nodeType: NodeTypeAlternateProcess,
-			label:    fixtureLabel,
-			expected: "node([\"a label\"]);\n",
-		},
-		{
 			name:     "subprocess",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeSubprocess,

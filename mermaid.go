@@ -113,8 +113,6 @@ func renderMermaidNode(n *Node, indents int) string {
 		return fmt.Sprintf("%s%s(\"%s\");\n", indentSpaces, removeSpaces(n.name), *n.Label)
 	case NodeTypeProcess:
 		return fmt.Sprintf("%s%s[\"%s\"];\n", indentSpaces, removeSpaces(n.name), *n.Label)
-	case NodeTypeAlternateProcess:
-		return fmt.Sprintf("%s%s([\"%s\"]);\n", indentSpaces, removeSpaces(n.name), *n.Label)
 	case NodeTypeSubprocess:
 		return fmt.Sprintf("%s%s[[\"%s\"]];\n", indentSpaces, removeSpaces(n.name), *n.Label)
 	case NodeTypeDecision:

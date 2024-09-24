@@ -31,14 +31,13 @@ const (
 
 // Constants for various node types in a flowchart.
 const (
-	NodeTypeTerminator       NodeTypeEnum = iota // Start/End node
-	NodeTypeProcess                              // Standard process node
-	NodeTypeAlternateProcess                     // Alternate process node
-	NodeTypeSubprocess                           // Subprocess node
-	NodeTypeDecision                             // Decision node
-	NodeTypeInputOutput                          // Input/Output node
-	NodeTypeConnector                            // Connector node
-	NodeTypeDatabase                             // Database node
+	NodeTypeTerminator  NodeTypeEnum = iota // Start/End node
+	NodeTypeProcess                         // Standard process node
+	NodeTypeSubprocess                      // Subprocess node
+	NodeTypeDecision                        // Decision node
+	NodeTypeInputOutput                     // Input/Output node
+	NodeTypeConnector                       // Connector node
+	NodeTypeDatabase                        // Database node
 )
 
 // Constants for line types in flowchart links.
@@ -198,11 +197,6 @@ func TerminatorNode(name string, label *string) *Node {
 // ProcessNode creates a process node with the specified name and label.
 func ProcessNode(name string, label *string) *Node {
 	return basicNode(name, label, NodeTypeProcess)
-}
-
-// AlternateProcessNode creates an alternate process node with the specified name and label.
-func AlternateProcessNode(name string, label *string) *Node {
-	return basicNode(name, label, NodeTypeAlternateProcess)
 }
 
 // SubprocessNode creates a subprocess node with the specified name and label.
