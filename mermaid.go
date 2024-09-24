@@ -3,6 +3,7 @@ package flowchart
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -127,14 +128,14 @@ func (n NodeTypeEnum) toMermaidRight() string {
 }
 
 func (l Link) toMermaid() string {
-	if l.Target == nil {
+	if l.Target == nil || l.Origin == nil {
 		return ""
 	}
 
 	line := l.LineType.toMermaidBidirectional()
 
 	if l.LineType == LineTypeNone {
-		return fmt.Sprintf("%s %s", line, removeSpaces(l.Target.nodeName()))
+		return fmt.Sprintf("%s %s %s", removeSpaces(l.Origin.nodeName()), line, removeSpaces(l.Target.nodeName()))
 	}
 
 	if (l.OriginArrow || l.TargetArrow) && (l.LineType == LineTypeSolid || l.LineType == LineTypeThick) {
@@ -154,7 +155,7 @@ func (l Link) toMermaid() string {
 		line = fmt.Sprintf("%s \"%s\" %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
 	}
 
-	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.Target.nodeName()))
+	return fmt.Sprintf("%s %s%s%s %s", removeSpaces(l.Origin.nodeName()), originArrow, line, targetArrow, removeSpaces(l.Target.nodeName()))
 }
 
 func (n *Node) toMermaid(indents int) string {
@@ -170,13 +171,6 @@ func (n *Node) toMermaid(indents int) string {
 			n.Type.toMermaidLeft(),
 			*n.Label,
 			n.Type.toMermaidRight(),
-		))
-	}
-	for _, link := range n.Links {
-		sb.WriteString(fmt.Sprintf("%s%s %s;\n",
-			indentSpaces,
-			removeSpaces(n.name),
-			link.toMermaid(),
 		))
 	}
 
@@ -212,12 +206,12 @@ func (f *Flowchart) toMermaid(indents int, subgraph bool) string {
 
 	// nodes
 	for _, node := range f.Nodes {
-		sb.WriteString(fmt.Sprintf("\n%s", node.toMermaid(indents+1)))
+		sb.WriteString(fmt.Sprintf("%s", node.toMermaid(indents+1)))
 	}
 
 	// subgraphs
 	for _, subgraph := range f.Subgraphs {
-		sb.WriteString(fmt.Sprintf("\n%s", subgraph.toMermaid(indents+1, true)))
+		sb.WriteString(fmt.Sprintf("%s", subgraph.toMermaid(indents+1, true)))
 	}
 
 	if subgraph {
@@ -225,15 +219,40 @@ func (f *Flowchart) toMermaid(indents int, subgraph bool) string {
 		sb.WriteString(fmt.Sprintf("%send;\n", indentSpaces))
 	}
 
+	if !subgraph {
+		allLinks := getAllLinks(f)
+		for _, link := range allLinks {
+			sb.WriteString(fmt.Sprintf("    %s;\n", link.toMermaid()))
+		}
+	}
+
 	return sb.String()
 }
 
 func (f *Flowchart) ToMermaid() string {
-	if hasValidMermaidNames(f) {
-		return f.toMermaid(0, false)
+	if !hasValidMermaidNames(f) {
+		return "invalid mermaid string"
 	}
-	// TOOD: Test this condition
-	return "invalid mermaid string"
+
+	return f.toMermaid(0, false)
+}
+
+func getAllLinks(f *Flowchart) []Link {
+	var allLinks []Link
+
+	allLinks = append(allLinks, f.Links...)
+	for _, subgraph := range f.Subgraphs {
+		allLinks = append(allLinks, getAllLinks(subgraph)...)
+	}
+
+	sort.Slice(allLinks, func(i, j int) bool {
+		if allLinks[i].Origin.nodeName() == allLinks[j].Origin.nodeName() {
+			return allLinks[i].Target.nodeName() < allLinks[j].Target.nodeName()
+		}
+		return allLinks[i].Origin.nodeName() < allLinks[j].Origin.nodeName()
+	})
+
+	return allLinks
 }
 
 func hasValidMermaidNames(f *Flowchart) bool {
