@@ -81,52 +81,6 @@ func (l LineTypeEnum) toMermaidBidirectional() string {
 	}
 }
 
-func (n NodeTypeEnum) toMermaidLeft() string {
-	switch n {
-	case NodeTypeTerminator:
-		return "("
-	case NodeTypeProcess:
-		return "["
-	case NodeTypeAlternateProcess:
-		return "(["
-	case NodeTypeSubprocess:
-		return "[["
-	case NodeTypeDecision:
-		return "{"
-	case NodeTypeInputOutput:
-		return "[/"
-	case NodeTypeConnector:
-		return "(("
-	case NodeTypeDatabase:
-		return "[("
-	default:
-		return "("
-	}
-}
-
-func (n NodeTypeEnum) toMermaidRight() string {
-	switch n {
-	case NodeTypeTerminator:
-		return ")"
-	case NodeTypeProcess:
-		return "]"
-	case NodeTypeAlternateProcess:
-		return "])"
-	case NodeTypeSubprocess:
-		return "]]"
-	case NodeTypeDecision:
-		return "}"
-	case NodeTypeInputOutput:
-		return "/]"
-	case NodeTypeConnector:
-		return "))"
-	case NodeTypeDatabase:
-		return ")]"
-	default:
-		return ")"
-	}
-}
-
 func (l Link) toMermaid() string {
 	if l.Target == nil || l.Origin == nil {
 		return ""
@@ -160,21 +114,30 @@ func (l Link) toMermaid() string {
 
 func (n *Node) toMermaid(indents int) string {
 	indentSpaces := strings.Repeat(" ", 4*indents)
-	var sb strings.Builder
 
 	if n.Label == nil || *n.Label == "" {
-		sb.WriteString(fmt.Sprintf("%s%s;\n", indentSpaces, removeSpaces(n.name)))
-	} else {
-		sb.WriteString(fmt.Sprintf("%s%s%s\"%s\"%s;\n",
-			indentSpaces,
-			removeSpaces(n.name),
-			n.Type.toMermaidLeft(),
-			*n.Label,
-			n.Type.toMermaidRight(),
-		))
+		return fmt.Sprintf("%s%s;\n", indentSpaces, removeSpaces(n.name))
 	}
-
-	return sb.String()
+	switch n.Type {
+	case NodeTypeTerminator:
+		return fmt.Sprintf("%s%s(\"%s\");\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeProcess:
+		return fmt.Sprintf("%s%s[\"%s\"];\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeAlternateProcess:
+		return fmt.Sprintf("%s%s([\"%s\"]);\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeSubprocess:
+		return fmt.Sprintf("%s%s[[\"%s\"]];\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeDecision:
+		return fmt.Sprintf("%s%s{\"%s\"};\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeInputOutput:
+		return fmt.Sprintf("%s%s[/\"%s\"/];\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeConnector:
+		return fmt.Sprintf("%s%s((\"%s\"));\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	case NodeTypeDatabase:
+		return fmt.Sprintf("%s%s[(\"%s\")];\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	default:
+		return fmt.Sprintf("%s%s(\"%s\");\n", indentSpaces, removeSpaces(n.name), *n.Label)
+	}
 }
 
 func (f *Flowchart) toMermaid(indents int, subgraph bool) string {
