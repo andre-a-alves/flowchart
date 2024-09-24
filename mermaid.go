@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+// mermaidFlowchartDirection converts a DirectionEnum to a Mermaid.js flowchart direction string.
+// Valid values are:
+// - "LR" for left-to-right horizontal direction.
+// - "RL" for right-to-left horizontal direction.
+// - "TB" for top-to-bottom vertical direction (default if direction is not recognized).
 func mermaidFlowchartDirection(f DirectionEnum) string {
 	switch f {
 	case DirectionHorizontalRight:
@@ -19,6 +24,9 @@ func mermaidFlowchartDirection(f DirectionEnum) string {
 	return "TB"
 }
 
+// renderArrows generates the arrow characters for a Mermaid.js link based on the Link's ArrowType and
+// whether the OriginArrow and TargetArrow flags are set.
+// It returns two strings representing the arrows for the origin and target, respectively.
 func renderArrows(l Link) (string, string) {
 	if !l.TargetArrow || l.ArrowType == ArrowTypeNone {
 		return "", ""
@@ -47,6 +55,9 @@ func renderArrows(l Link) (string, string) {
 	}
 }
 
+// renderMermaidLink generates a Mermaid.js representation of a Link between two Nodes.
+// It returns a string that defines the link, including the line type, any arrows, and optional labels.
+// Returns an empty string if either the origin or target nodes are nil.
 func renderMermaidLink(l Link) string {
 	if l.Target == nil || l.Origin == nil {
 		return ""
@@ -89,6 +100,8 @@ func renderMermaidLink(l Link) string {
 	}
 }
 
+// renderMermaidNode generates a Mermaid.js representation of a Node based on its type and label.
+// It returns a string with the proper indentation for the node's position in the flowchart.
 func renderMermaidNode(n *Node, indents int) string {
 	indentSpaces := strings.Repeat(" ", 4*indents)
 
@@ -117,6 +130,10 @@ func renderMermaidNode(n *Node, indents int) string {
 	}
 }
 
+// renderMermaidFlowchart generates a Mermaid.js representation of a Flowchart.
+// It recursively renders subgraphs and their nodes, as well as links between nodes.
+// If the flowchart is a subgraph, it starts and ends the subgraph block.
+// It returns a string that defines the entire flowchart in Mermaid.js syntax.
 func renderMermaidFlowchart(f *Flowchart, indents int, subgraph bool) string {
 	indentSpaces := strings.Repeat(" ", 4*indents)
 	var sb strings.Builder
@@ -169,6 +186,9 @@ func renderMermaidFlowchart(f *Flowchart, indents int, subgraph bool) string {
 	return sb.String()
 }
 
+// RenderMermaid generates a Mermaid.js flowchart string for the given Flowchart object.
+// It validates that all nodes in the flowchart have valid names, returning an error if any names are invalid.
+// It returns the Mermaid.js representation of the flowchart or an error if validation fails.
 func RenderMermaid(f *Flowchart) (string, error) {
 	if !hasValidMermaidNames(f) {
 		return "", fmt.Errorf("flowchart contains invalid mermaid names")
@@ -177,6 +197,8 @@ func RenderMermaid(f *Flowchart) (string, error) {
 	return renderMermaidFlowchart(f, 0, false), nil
 }
 
+// getAllLinks collects all Links from the flowchart, including links from subgraphs.
+// It returns a sorted slice of all links in the flowchart, ordered first by origin and then by target.
 func getAllLinks(f *Flowchart) []Link {
 	var allLinks []Link
 
@@ -195,6 +217,8 @@ func getAllLinks(f *Flowchart) []Link {
 	return allLinks
 }
 
+// hasValidMermaidNames checks if all nodes and subgraphs in the flowchart have valid Mermaid.js names.
+// It returns true if all names are valid; otherwise, it returns false.
 func hasValidMermaidNames(f *Flowchart) bool {
 	for _, node := range f.Nodes {
 		if !isValidMermaidNodeName(node.name) {
@@ -209,6 +233,9 @@ func hasValidMermaidNames(f *Flowchart) bool {
 	return true
 }
 
+// isValidMermaidNodeName checks if a string is a valid Mermaid.js node name.
+// A valid node name contains only letters, digits, underscores, dashes, and spaces.
+// It returns true if the name is valid; otherwise, it returns false.
 func isValidMermaidNodeName(s string) bool {
 	// Define regex for a valid Mermaid.js node name
 	// Allows letters, digits, underscores, and dashes only
