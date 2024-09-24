@@ -6,50 +6,64 @@ import (
 	"testing"
 )
 
-func TestNode_AddLink(t *testing.T) {
+func TestFlowchart_AddLink(t *testing.T) {
 	tests := []struct {
 		name          string
-		node          Node
+		chart         *Flowchart
 		link          Link
 		expectedErr   error
 		expectedLinks []Link
 	}{
 		{
-			name: "Add valid link",
-			node: Node{name: "StartNode", Links: []Link{}},
+			name:  "Add valid link",
+			chart: basicFlowchart(nil, DirectionVertical),
 			link: Link{
-				TargetNode: &Node{name: "TargetNode"},
-				Label:      pointTo("LinkLabel"),
+				Origin: &Node{name: "Origin"},
+				Target: &Node{name: "Target"},
+				Label:  pointTo("LinkLabel"),
 			},
 			expectedErr: nil,
 			expectedLinks: []Link{
 				{
-					TargetNode: &Node{name: "TargetNode"},
-					Label:      pointTo("LinkLabel"),
+					Origin: &Node{name: "Origin"},
+					Target: &Node{name: "Target"},
+					Label:  pointTo("LinkLabel"),
 				},
 			},
 		},
 		{
-			name: "Add invalid link with nil TargetNode",
-			node: Node{name: "StartNode", Links: []Link{}},
+			name:  "Add invalid link with nil Target",
+			chart: basicFlowchart(nil, DirectionVertical),
 			link: Link{
-				TargetNode: nil,
-				Label:      nil,
+				Origin: &Node{name: "Origin"},
+				Target: nil,
+				Label:  nil,
 			},
 			expectedErr:   fmt.Errorf("cannot add link with no target node"),
-			expectedLinks: []Link{},
+			expectedLinks: nil,
+		},
+		{
+			name:  "Add invalid link with nil Origin",
+			chart: basicFlowchart(nil, DirectionVertical),
+			link: Link{
+				Origin: nil,
+				Target: &Node{name: "Target"},
+				Label:  nil,
+			},
+			expectedErr:   fmt.Errorf("cannot add link with no origin node"),
+			expectedLinks: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.node.AddLink(tt.link)
+			err := tt.chart.AddLink(tt.link)
 
 			if diff := cmp.Diff(tt.expectedErr, err, cmp.Comparer(compareErrors)); diff != "" {
 				t.Errorf("AddLink() error mismatch (-want +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tt.expectedLinks, tt.node.Links, cmp.AllowUnexported(Node{})); diff != "" {
+			if diff := cmp.Diff(tt.expectedLinks, tt.chart.Links, cmp.AllowUnexported(Node{})); diff != "" {
 				t.Errorf("AddLink() Links mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -169,14 +183,14 @@ func TestFlowchart_allNames(t *testing.T) {
 		{
 			name: "Flowchart with title, nodes, and subgraphs",
 			flowchart: Flowchart{
-				Title: stringPtr("Main Flowchart"),
+				Title: pointTo("Main Flowchart"),
 				Nodes: []*Node{
 					{name: "Node1"},
 					{name: "Node2"},
 				},
 				Subgraphs: []*Flowchart{
 					{
-						Title: stringPtr("Subgraph1"),
+						Title: pointTo("Subgraph1"),
 						Nodes: []*Node{
 							{name: "SubNode1"},
 							{name: "SubNode2"},
@@ -198,13 +212,13 @@ func TestFlowchart_allNames(t *testing.T) {
 		{
 			name: "Flowchart with nested subgraphs",
 			flowchart: Flowchart{
-				Title: stringPtr("Main Flowchart"),
+				Title: pointTo("Main Flowchart"),
 				Subgraphs: []*Flowchart{
 					{
-						Title: stringPtr("Subgraph1"),
+						Title: pointTo("Subgraph1"),
 						Subgraphs: []*Flowchart{
 							{
-								Title: stringPtr("NestedSubgraph"),
+								Title: pointTo("NestedSubgraph"),
 								Nodes: []*Node{
 									{name: "NestedNode1"},
 								},
@@ -227,14 +241,11 @@ func TestFlowchart_allNames(t *testing.T) {
 	}
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
 func TestLinks(t *testing.T) {
 	fixtureLink := func(mods ...func(l *Link)) Link {
 		link := &Link{
-			TargetNode:  nil,
+			Origin:      nil,
+			Target:      nil,
 			LineType:    LineTypeSolid,
 			ArrowType:   ArrowTypeNormal,
 			OriginArrow: false,
@@ -247,40 +258,73 @@ func TestLinks(t *testing.T) {
 		return *link
 	}
 	fixtureLabel := pointTo("Link Label")
-	fixtureTarget := &Node{name: "Node1"}
+	fixtureSubgraph := &Flowchart{Title: pointTo("Subgraph")}
+	fixtureNode := &Node{name: "Node"}
 
 	testBasicLink := []struct {
-		name       string
-		targetNode *Node
-		label      *string
-		lineType   LineTypeEnum
-		expected   Link
+		name     string
+		origin   Linkable
+		target   Linkable
+		label    *string
+		lineType LineTypeEnum
+		expected Link
 	}{
 		{
-			name:       "Nil target node",
-			targetNode: nil,
-			label:      fixtureLabel,
-			lineType:   LineTypeSolid,
+			name:     "Nil locations",
+			origin:   nil,
+			target:   nil,
+			label:    fixtureLabel,
+			lineType: LineTypeSolid,
 			expected: fixtureLink(func(l *Link) {
 				l.Label = fixtureLabel
+				l.Origin = (Linkable)(nil)
+				l.Target = (Linkable)(nil)
 			}),
 		},
 		{
-			name:       "Nil label",
-			targetNode: fixtureTarget,
-			label:      nil,
-			lineType:   LineTypeSolid,
+			name:     "Nil target",
+			origin:   fixtureNode,
+			target:   nil,
+			label:    fixtureLabel,
+			lineType: LineTypeSolid,
 			expected: fixtureLink(func(l *Link) {
-				l.TargetNode = fixtureTarget
+				l.Label = fixtureLabel
+				l.Origin = fixtureNode
+				l.Target = (Linkable)(nil)
 			}),
 		},
 		{
-			name:       "Valid target node with label - dotted",
-			targetNode: fixtureTarget,
-			label:      fixtureLabel,
-			lineType:   LineTypeDotted,
+			name:     "Nil origin",
+			origin:   nil,
+			target:   fixtureNode,
+			label:    fixtureLabel,
+			lineType: LineTypeSolid,
 			expected: fixtureLink(func(l *Link) {
-				l.TargetNode = fixtureTarget
+				l.Label = fixtureLabel
+				l.Origin = (Linkable)(nil)
+				l.Target = fixtureNode
+			}),
+		},
+		{
+			name:     "Nil label",
+			origin:   fixtureSubgraph,
+			target:   fixtureNode,
+			label:    nil,
+			lineType: LineTypeSolid,
+			expected: fixtureLink(func(l *Link) {
+				l.Origin = fixtureSubgraph
+				l.Target = fixtureNode
+			}),
+		},
+		{
+			name:     "Valid target node with label - dotted",
+			origin:   fixtureNode,
+			target:   fixtureSubgraph,
+			label:    fixtureLabel,
+			lineType: LineTypeDotted,
+			expected: fixtureLink(func(l *Link) {
+				l.Origin = fixtureNode
+				l.Target = fixtureSubgraph
 				l.Label = fixtureLabel
 				l.LineType = LineTypeDotted
 			}),
@@ -288,7 +332,7 @@ func TestLinks(t *testing.T) {
 	}
 	for _, tt := range testBasicLink {
 		t.Run(tt.name, func(t *testing.T) {
-			got := basicLink(tt.targetNode, tt.label, tt.lineType)
+			got := basicLink(tt.origin, tt.target, tt.label, tt.lineType)
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
 				t.Errorf("basicLink() got mismatch (-want +got):\n%s", diff)
@@ -298,7 +342,7 @@ func TestLinks(t *testing.T) {
 
 	testLinkTypes := []struct {
 		name     string
-		function func(*Node, *string) Link
+		function func(Linkable, Linkable, *string) Link
 		expected Link
 	}{
 		{
@@ -332,7 +376,7 @@ func TestLinks(t *testing.T) {
 	}
 	for _, tt := range testLinkTypes {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.function(nil, nil)
+			got := tt.function(nil, nil, nil)
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Node{})); diff != "" {
 				t.Errorf("got mismatch (-want +got):\n%s", diff)
@@ -348,7 +392,6 @@ func TestNodes(t *testing.T) {
 			name:  fixtureNodeName,
 			Type:  NodeTypeProcess,
 			Label: nil,
-			Links: []Link{},
 		}
 		for _, mod := range mods {
 			mod(node)
@@ -481,7 +524,7 @@ func TestBasicFlowchart(t *testing.T) {
 
 	testBasicFlowchart := []struct {
 		name      string
-		direction FlowchartDirectionEnum
+		direction DirectionEnum
 		title     *string
 		expected  *Flowchart
 	}{
@@ -541,6 +584,65 @@ func TestBasicFlowchart(t *testing.T) {
 
 			if diff := cmp.Diff(tt.expected, got, cmp.AllowUnexported(Flowchart{})); diff != "" {
 				t.Errorf("got mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestLinkable_nodeName(t *testing.T) {
+	nodeTests := []struct {
+		name     string
+		node     Node
+		expected string
+	}{
+		{
+			name:     "Regular name",
+			node:     Node{name: "Start"},
+			expected: "Start",
+		},
+		{
+			name:     "Empty name",
+			node:     Node{name: ""},
+			expected: "",
+		},
+	}
+
+	for _, tt := range nodeTests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.node.nodeName()
+			if result != tt.expected {
+				t.Errorf("nodeName() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+
+	flowchartTests := []struct {
+		name     string
+		subgraph Flowchart
+		expected string
+	}{
+		{
+			name:     "Regular title",
+			subgraph: Flowchart{Title: pointTo("Subgraph1")},
+			expected: "Subgraph1",
+		},
+		{
+			name:     "Empty title",
+			subgraph: Flowchart{Title: pointTo("")},
+			expected: "",
+		},
+		{
+			name:     "Nil title",
+			subgraph: Flowchart{Title: nil},
+			expected: "",
+		},
+	}
+
+	for _, tt := range flowchartTests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.subgraph.nodeName()
+			if result != tt.expected {
+				t.Errorf("nodeName() = %v, want %v", result, tt.expected)
 			}
 		})
 	}

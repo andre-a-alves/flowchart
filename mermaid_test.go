@@ -2,14 +2,13 @@ package flowchart
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"regexp"
 	"testing"
 )
 
 func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 	tests := []struct {
 		name      string
-		direction FlowchartDirectionEnum
+		direction DirectionEnum
 		expected  string
 	}{
 		{
@@ -29,8 +28,8 @@ func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 		},
 		{
 			name:      "Unknown direction (fallback)",
-			direction: FlowchartDirectionEnum(999), // Unknown value to test fallback
-			expected:  "TB",                        // Default fallback
+			direction: DirectionEnum(999), // Unknown value to test fallback
+			expected:  "TB",               // Default fallback
 		},
 	}
 
@@ -398,7 +397,8 @@ func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
 }
 
 func TestLink_toMermaid(t *testing.T) {
-	fixtureTargetNode := Node{name: "Target Node"}
+	fixtureOriginSubgraph := Flowchart{Title: pointTo("Origin")}
+	fixtureTargetNode := Node{name: "Target"}
 
 	tests := []struct {
 		name     string
@@ -413,7 +413,21 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: true,
 				Label:       pointTo("some label"),
-				TargetNode:  nil,
+				Origin:      &fixtureTargetNode,
+				Target:      nil,
+			},
+			expected: "",
+		},
+		{
+			name: "no origin",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: false,
+				LineType:    LineTypeSolid,
+				TargetArrow: true,
+				Label:       pointTo("some label"),
+				Origin:      nil,
+				Target:      &fixtureTargetNode,
 			},
 			expected: "",
 		},
@@ -425,9 +439,23 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeNone,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "~~~ TargetNode",
+			expected: "Origin ~~~ Target",
+		},
+		{
+			name: "no line - node to subgraph",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeNone,
+				TargetArrow: false,
+				Label:       pointTo("some label"),
+				Origin:      &fixtureTargetNode,
+				Target:      &fixtureOriginSubgraph,
+			},
+			expected: "Target ~~~ Origin",
 		},
 		{
 			name: "solid line - no label",
@@ -437,9 +465,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "--- TargetNode",
+			expected: "Origin --- Target",
 		},
 		{
 			name: "solid line - with label",
@@ -449,9 +478,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-- some label -- TargetNode",
+			expected: "Origin -- \"some label\" -- Target",
 		},
 		{
 			name: "dotted line - no label",
@@ -461,9 +491,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeDotted,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-.- TargetNode",
+			expected: "Origin -.- Target",
 		},
 		{
 			name: "dotted line - with label",
@@ -473,9 +504,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeDotted,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "-. some label .- TargetNode",
+			expected: "Origin -. \"some label\" .- Target",
 		},
 		{
 			name: "thick line - no label",
@@ -485,9 +517,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeThick,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "=== TargetNode",
+			expected: "Origin === Target",
 		},
 		{
 			name: "thick line - with label",
@@ -497,21 +530,23 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeThick,
 				TargetArrow: false,
 				Label:       pointTo("some label"),
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "== some label == TargetNode",
+			expected: "Origin == \"some label\" == Target",
 		},
 		{
-			name: "origin arrow yes",
+			name: "only origin arrow yes",
 			link: Link{
 				ArrowType:   ArrowTypeNormal,
 				OriginArrow: true,
 				LineType:    LineTypeSolid,
 				TargetArrow: false,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "<-- TargetNode",
+			expected: "Origin -- Target",
 		},
 		{
 			name: "target arrow yes",
@@ -521,9 +556,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: true,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "--> TargetNode",
+			expected: "Origin --> Target",
 		},
 		{
 			name: "both arrows",
@@ -533,9 +569,10 @@ func TestLink_toMermaid(t *testing.T) {
 				LineType:    LineTypeSolid,
 				TargetArrow: true,
 				Label:       nil,
-				TargetNode:  &fixtureTargetNode,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
 			},
-			expected: "<--> TargetNode",
+			expected: "Origin <--> Target",
 		},
 	}
 
@@ -550,7 +587,7 @@ func TestLink_toMermaid(t *testing.T) {
 	}
 }
 
-func TestNode_toMermaidNode(t *testing.T) {
+func TestNode_toMermaid(t *testing.T) {
 	tests := []struct {
 		name     string
 		node     *Node
@@ -563,7 +600,6 @@ func TestNode_toMermaidNode(t *testing.T) {
 				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: nil,
-				Links: nil,
 			},
 			indents:  0,
 			expected: "FirstNode;\n",
@@ -574,7 +610,6 @@ func TestNode_toMermaidNode(t *testing.T) {
 				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: pointTo(""),
-				Links: nil,
 			},
 			indents:  1,
 			expected: "    FirstNode;\n",
@@ -585,97 +620,9 @@ func TestNode_toMermaidNode(t *testing.T) {
 				name:  "First Node",
 				Type:  NodeTypeProcess,
 				Label: pointTo("Node Label"),
-				Links: nil,
 			},
 			indents:  2,
-			expected: "        FirstNode[Node Label];\n",
-		},
-		{
-			name: "Node with links and no label",
-			node: &Node{
-				name:  "First Node",
-				Type:  NodeTypeProcess,
-				Label: nil,
-				Links: []Link{
-					{
-						ArrowType:   ArrowTypeNormal,
-						OriginArrow: true,
-						LineType:    LineTypeSolid,
-						TargetArrow: false,
-						Label:       nil,
-						TargetNode: &Node{
-							name:  "Target Node",
-							Type:  NodeTypeProcess,
-							Label: pointTo("ignored node label"),
-							Links: nil,
-						},
-					},
-				},
-			},
-			indents:  0,
-			expected: "FirstNode;\nFirstNode <-- TargetNode;\n",
-		},
-		{
-			name: "Node with links and label",
-			node: &Node{
-				name:  "First Node",
-				Type:  NodeTypeProcess,
-				Label: pointTo("Label"),
-				Links: []Link{
-					{
-						ArrowType:   ArrowTypeCross,
-						OriginArrow: false,
-						LineType:    LineTypeDotted,
-						TargetArrow: true,
-						Label:       pointTo("Link Label"),
-						TargetNode: &Node{
-							name:  "Target Node",
-							Type:  NodeTypeProcess,
-							Label: nil,
-							Links: nil,
-						},
-					},
-				}},
-			indents:  1,
-			expected: "    FirstNode[Label];\n    FirstNode -. Link Label .-x TargetNode;\n",
-		},
-		{
-			name: "Node with multiple links and label",
-			node: &Node{
-				name:  "First Node",
-				Type:  NodeTypeProcess,
-				Label: pointTo("Node Label"),
-				Links: []Link{
-					{
-						ArrowType:   ArrowTypeNormal,
-						OriginArrow: false,
-						LineType:    LineTypeSolid,
-						TargetArrow: true,
-						Label:       nil,
-						TargetNode: &Node{
-							name:  "Target Node One",
-							Type:  NodeTypeProcess,
-							Label: nil,
-							Links: nil,
-						},
-					},
-					{
-						ArrowType:   ArrowTypeCircle,
-						OriginArrow: true,
-						LineType:    LineTypeDotted,
-						TargetArrow: true,
-						Label:       pointTo("Link Label"),
-						TargetNode: &Node{
-							name:  "Target Node Two",
-							Type:  NodeTypeProcess,
-							Label: nil,
-							Links: nil,
-						},
-					},
-				},
-			},
-			indents:  2,
-			expected: "        FirstNode[Node Label];\n        FirstNode --> TargetNodeOne;\n        FirstNode o-. Link Label .-o TargetNodeTwo;\n",
+			expected: "        FirstNode[\"Node Label\"];\n",
 		},
 	}
 	for _, tt := range tests {
@@ -702,63 +649,63 @@ func TestNode_toMermaidNode(t *testing.T) {
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeTerminator,
 			label:    fixtureLabel,
-			expected: "node(a label);\n",
+			expected: "node(\"a label\");\n",
 		},
 		{
 			name:     "process",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeProcess,
 			label:    fixtureLabel,
-			expected: "node[a label];\n",
+			expected: "node[\"a label\"];\n",
 		},
 		{
 			name:     "alternate process",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeAlternateProcess,
 			label:    fixtureLabel,
-			expected: "node([a label]);\n",
+			expected: "node([\"a label\"]);\n",
 		},
 		{
 			name:     "subprocess",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeSubprocess,
 			label:    fixtureLabel,
-			expected: "node[[a label]];\n",
+			expected: "node[[\"a label\"]];\n",
 		},
 		{
 			name:     "decision",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeDecision,
 			label:    fixtureLabel,
-			expected: "node{a label};\n",
+			expected: "node{\"a label\"};\n",
 		},
 		{
 			name:     "input/output",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeInputOutput,
 			label:    fixtureLabel,
-			expected: "node[/a label/];\n",
+			expected: "node[/\"a label\"/];\n",
 		},
 		{
 			name:     "connector",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeConnector,
 			label:    fixtureLabel,
-			expected: "node((a label));\n",
+			expected: "node((\"a label\"));\n",
 		},
 		{
 			name:     "database",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeDatabase,
 			label:    fixtureLabel,
-			expected: "node[(a label)];\n",
+			expected: "node[(\"a label\")];\n",
 		},
 		{
 			name:     "invalid",
 			nodeName: fixtureNodeName,
 			nodeType: NodeTypeEnum(-1),
 			label:    fixtureLabel,
-			expected: "node(a label);\n",
+			expected: "node(\"a label\");\n",
 		},
 	}
 	for _, tt := range testTypes {
@@ -776,12 +723,13 @@ func TestNode_toMermaidNode(t *testing.T) {
 	}
 }
 
-func TestFlowchart_toMermaidSubgraph(t *testing.T) {
+func TestFlowchart_toMermaid(t *testing.T) {
 	tests := []struct {
-		name      string
-		flowchart *Flowchart
-		indents   int
-		expected  string
+		name        string
+		flowchart   *Flowchart
+		indents     int
+		expected    string
+		expectPanic bool
 	}{
 		{
 			name: "Flowchart with no title",
@@ -791,8 +739,9 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 				Nodes:     []*Node{{name: "Node One"}},
 				Subgraphs: nil,
 			},
-			indents:  1,
-			expected: "    subgraph 123456;\n        direction LR;\n\n        NodeOne;\n    end;\n",
+			indents:     1,
+			expected:    "",
+			expectPanic: true,
 		},
 		{
 			name: "Flowchart with no subgraphs",
@@ -805,8 +754,9 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 				},
 				Subgraphs: []*Flowchart{},
 			},
-			indents:  1,
-			expected: "    subgraph MainTitle [Main Title];\n        direction TB;\n\n        FirstNode;\n\n        SecondNode;\n    end;\n",
+			indents:     1,
+			expected:    "    subgraph MainTitle [Main Title];\n        direction TB;\n        FirstNode;\n        SecondNode;\n    end;\n",
+			expectPanic: false,
 		},
 		{
 			name: "Flowchart with subgraphs",
@@ -830,35 +780,41 @@ func TestFlowchart_toMermaidSubgraph(t *testing.T) {
 			indents: 0,
 			expected: `subgraph MainTitle [Main Title];
     direction TB;
-
     FirstNode;
-
     subgraph SubgraphOne [Subgraph One];
         direction RL;
-
         SecondNode;
     end;
-
     subgraph SubgraphTwo [Subgraph Two];
         direction LR;
-
         ThirdNode;
     end;
 end;
 `,
+			expectPanic: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.flowchart.toMermaidSubgraph(tt.indents)
+			// Catch panic if expected
+			defer func() {
+				if r := recover(); r != nil {
+					if !tt.expectPanic {
+						t.Errorf("unexpected panic: %v", r)
+					}
+				} else if tt.expectPanic {
+					t.Error("expected panic but none occurred")
+				}
+			}()
+			got := tt.flowchart.toMermaid(tt.indents, true)
 			if tt.flowchart.Title == nil {
-				if diff := cmp.Diff(maskUUIDsInSubgraph(tt.expected), maskUUIDsInSubgraph(got)); diff != "" {
-					t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
+				if diff := cmp.Diff(tt.expected, got); diff != "" {
+					t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 				}
 			} else {
 				if diff := cmp.Diff(tt.expected, got); diff != "" {
-					t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
+					t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 				}
 			}
 		})
@@ -867,19 +823,28 @@ end;
 
 func TestFlowchart_ToMermaid(t *testing.T) {
 	tests := []struct {
-		name      string
-		flowchart *Flowchart
-		expected  string
+		name        string
+		flowchart   *Flowchart
+		expected    string
+		expectedErr bool
 	}{
+		{
+			name: "invalid mermaid name",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{{name: "("}},
+			},
+			expected:    "",
+			expectedErr: true,
+		},
 		{
 			name: "Flowchart with no title",
 			flowchart: &Flowchart{
 				Direction: DirectionHorizontalRight,
-				Title:     nil,
 				Nodes:     []*Node{{name: "Node One"}},
-				Subgraphs: nil,
 			},
-			expected: "flowchart LR;\n\n    NodeOne;\n",
+			expected:    "flowchart LR;\n    NodeOne;\n",
+			expectedErr: false,
 		},
 		{
 			name:      "Full Flowchart with title",
@@ -888,44 +853,38 @@ func TestFlowchart_ToMermaid(t *testing.T) {
 title: Test Title
 ---
 flowchart LR;
-
     NodeOne;
-    NodeOne --> NodeTwo;
-
     NodeTwo;
-    NodeTwo --> NodeThree;
-    NodeTwo --> NodeFour;
-
     NodeThree;
-
     NodeFour;
-
-    subgraph 123456;
+    subgraph SubgraphOne [Subgraph One];
         direction TB;
-
         NodeFive;
-        NodeFive --> NodeSix;
-
         NodeSix;
-
-        subgraph 123456;
+        subgraph SubgraphTwo [Subgraph Two];
             direction RL;
-
             NodeSeven;
-            NodeSeven --> NodeEight;
-
             NodeEight;
         end;
     end;
+    NodeFive --> NodeSix;
+    NodeOne --> NodeTwo;
+    NodeSeven --> NodeEight;
+    NodeTwo --> NodeFour;
+    NodeTwo --> NodeThree;
 `,
+			expectedErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.flowchart.ToMermaid()
-			if diff := cmp.Diff(maskUUIDsInSubgraph(tt.expected), maskUUIDsInSubgraph(got)); diff != "" {
-				t.Errorf("toMermaidSubgraph() mismatch (-expected +got):\n%s", diff)
+			got, err := tt.flowchart.ToMermaid()
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
+			}
+			if (err == nil) == tt.expectedErr {
+				t.Errorf("ToMermaid() error = %v, expected %v", err, tt.expectedErr)
 			}
 		})
 	}
@@ -941,29 +900,29 @@ func fixtureFlowchart() *Flowchart {
 	nodeSeven := ProcessNode("Node Seven", nil)
 	nodeEight := ProcessNode("Node Eight", nil)
 
-	nodeOneLink := SolidLink(nodeTwo, nil)
-	nodeTwoLinkOne := SolidLink(nodeThree, nil)
-	nodeTwoLinkTwo := SolidLink(nodeFour, nil)
-	nodeFiveLink := SolidLink(nodeSix, nil)
-	nodeSevenLink := SolidLink(nodeEight, nil)
-
-	nodeOne.Links = []Link{nodeOneLink}
-	nodeTwo.Links = []Link{nodeTwoLinkOne, nodeTwoLinkTwo}
-	nodeFive.Links = []Link{nodeFiveLink}
-	nodeSeven.Links = []Link{nodeSevenLink}
+	nodeOneLink := SolidLink(nodeOne, nodeTwo, nil)
+	nodeTwoLinkOne := SolidLink(nodeTwo, nodeThree, nil)
+	nodeTwoLinkTwo := SolidLink(nodeTwo, nodeFour, nil)
+	nodeFiveLink := SolidLink(nodeFive, nodeSix, nil)
+	nodeSevenLink := SolidLink(nodeSeven, nodeEight, nil)
 
 	return &Flowchart{
 		Direction: DirectionHorizontalRight,
 		Title:     pointTo("Test Title"),
 		Nodes:     []*Node{nodeOne, nodeTwo, nodeThree, nodeFour},
+		Links:     []Link{nodeOneLink, nodeTwoLinkOne, nodeTwoLinkTwo},
 		Subgraphs: []*Flowchart{
 			{
 				Direction: DirectionVertical,
 				Nodes:     []*Node{nodeFive, nodeSix},
+				Title:     pointTo("Subgraph One"),
+				Links:     []Link{nodeFiveLink},
 				Subgraphs: []*Flowchart{
 					{
 						Direction: DirectionHorizontalLeft,
+						Title:     pointTo("Subgraph Two"),
 						Nodes:     []*Node{nodeSeven, nodeEight},
+						Links:     []Link{nodeSevenLink},
 					},
 				},
 			},
@@ -971,11 +930,156 @@ func fixtureFlowchart() *Flowchart {
 	}
 }
 
-// Helper function to mask UUIDs in a string after each subgraph
-func maskUUIDsInSubgraph(s string) string {
-	// Regular expression to match the "subgraph " followed by 6 characters (UUID)
-	re := regexp.MustCompile(`subgraph \w{6}`)
+func TestHasValidMermaidNames(t *testing.T) {
+	testCases := []struct {
+		name      string
+		flowchart Flowchart
+		expected  bool
+	}{
+		{
+			name: "happy path",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "ValidNode1"},
+					{name: "Valid_Node_2"},
+					{name: "Valid-Node-3"},
+					{name: "Valid Node 4"}, // With space
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo("Subgraph1"),
+						Nodes: []*Node{
+							{name: "SubNode1"},
+							{name: "SubNode2"},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Invalid node name with special character",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "ValidNode"},
+					{name: "Invalid@Node"},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Subgraph with invalid node name",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo("Subgraph1"),
+						Nodes: []*Node{
+							{name: "ValidSubNode"},
+							{name: "Invalid!SubNode"},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Subgraph with no title",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: nil,
+						Nodes: []*Node{
+							{name: "ValidSubNode"},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Empty subgraph title",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo(""),
+						Nodes: []*Node{
+							{name: "ValidSubNode"},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "nested subgraph",
+			flowchart: Flowchart{
+				Nodes: []*Node{
+					{name: "MainNode"},
+				},
+				Subgraphs: []*Flowchart{
+					{
+						Title: pointTo("Valid Subgraph"),
+						Subgraphs: []*Flowchart{{
+							Title: pointTo("Also Valid Subgraph"),
+							Nodes: []*Node{
+								{name: "Inv@alid"},
+							},
+						}},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
 
-	// Replace each "subgraph " followed by the 6-character UUID with "subgraph UUID"
-	return re.ReplaceAllString(s, "subgraph UUID")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := hasValidMermaidNames(&tc.flowchart)
+			if result != tc.expected {
+				t.Errorf("Expected %v, got %v", tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestIsValidMermaidNodeName(t *testing.T) {
+	testCases := []struct {
+		name     string
+		testCase string
+		expected bool
+	}{
+		{
+			"extreme valid case",
+			"Valid test-case_1",
+			true,
+		},
+		{
+			"parenthesis",
+			"(",
+			false,
+		},
+		{
+			"random special character",
+			"@",
+			false,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isValidMermaidNodeName(tt.testCase)
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("isValidMermaidNodeName() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
 }

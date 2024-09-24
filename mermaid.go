@@ -2,11 +2,12 @@ package flowchart
 
 import (
 	"fmt"
-	"github.com/google/uuid"
+	"regexp"
+	"sort"
 	"strings"
 )
 
-func (f FlowchartDirectionEnum) toMermaid() string {
+func (f DirectionEnum) toMermaid() string {
 	switch f {
 	case DirectionHorizontalRight:
 		return "LR"
@@ -127,33 +128,34 @@ func (n NodeTypeEnum) toMermaidRight() string {
 }
 
 func (l Link) toMermaid() string {
-	if l.TargetNode == nil {
+	if l.Target == nil || l.Origin == nil {
 		return ""
 	}
 
 	line := l.LineType.toMermaidBidirectional()
 
 	if l.LineType == LineTypeNone {
-		return fmt.Sprintf("%s %s", line, removeSpaces(l.TargetNode.name))
+		return fmt.Sprintf("%s %s %s", removeSpaces(l.Origin.nodeName()), line, removeSpaces(l.Target.nodeName()))
 	}
 
 	if (l.OriginArrow || l.TargetArrow) && (l.LineType == LineTypeSolid || l.LineType == LineTypeThick) {
 		line = line[:2]
 	}
 	originArrow := ""
-	if l.OriginArrow {
-		originArrow = l.ArrowType.toMermaidOrigin()
-	}
 	targetArrow := ""
 	if l.TargetArrow {
 		targetArrow = l.ArrowType.toMermaidTarget()
+		// arrows cannot be only from target to origin
+		if l.OriginArrow {
+			originArrow = l.ArrowType.toMermaidOrigin()
+		}
 	}
 
 	if l.Label != nil && *l.Label != "" {
-		line = fmt.Sprintf("%s %s %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
+		line = fmt.Sprintf("%s \"%s\" %s", l.LineType.toMermaidOrigin(), *l.Label, l.LineType.toMermaidTarget())
 	}
 
-	return fmt.Sprintf("%s%s%s %s", originArrow, line, targetArrow, removeSpaces(l.TargetNode.name))
+	return fmt.Sprintf("%s %s%s%s %s", removeSpaces(l.Origin.nodeName()), originArrow, line, targetArrow, removeSpaces(l.Target.nodeName()))
 }
 
 func (n *Node) toMermaid(indents int) string {
@@ -163,7 +165,7 @@ func (n *Node) toMermaid(indents int) string {
 	if n.Label == nil || *n.Label == "" {
 		sb.WriteString(fmt.Sprintf("%s%s;\n", indentSpaces, removeSpaces(n.name)))
 	} else {
-		sb.WriteString(fmt.Sprintf("%s%s%s%s%s;\n",
+		sb.WriteString(fmt.Sprintf("%s%s%s\"%s\"%s;\n",
 			indentSpaces,
 			removeSpaces(n.name),
 			n.Type.toMermaidLeft(),
@@ -171,75 +173,105 @@ func (n *Node) toMermaid(indents int) string {
 			n.Type.toMermaidRight(),
 		))
 	}
-	for _, link := range n.Links {
-		sb.WriteString(fmt.Sprintf("%s%s %s;\n",
-			indentSpaces,
-			removeSpaces(n.name),
-			link.toMermaid(),
-		))
-	}
 
 	return sb.String()
 }
 
-func (f *Flowchart) toMermaid(indents int) string {
-	var sb strings.Builder
-
-	// nodes
-	for _, node := range f.Nodes {
-		sb.WriteString(fmt.Sprintf("\n%s", node.toMermaid(indents)))
-	}
-
-	// subgraphs
-	for _, subgraph := range f.Subgraphs {
-		sb.WriteString(fmt.Sprintf("\n%s", subgraph.toMermaidSubgraph(indents)))
-	}
-
-	return sb.String()
-}
-
-func (f *Flowchart) toMermaidSubgraph(indents int) string {
+func (f *Flowchart) toMermaid(indents int, subgraph bool) string {
 	indentSpaces := strings.Repeat(" ", 4*indents)
 	var sb strings.Builder
 
-	// start subgraph
-	if f.Title == nil {
-		sb.WriteString(fmt.Sprintf("%ssubgraph %s;\n",
-			indentSpaces,
-			uuid.New().String()[0:6],
-		))
-	} else {
+	if subgraph {
+		// start subgraph
+		if f.Title == nil || *f.Title == "" {
+			panic("subgraph with no title")
+		}
 		sb.WriteString(fmt.Sprintf("%ssubgraph %s [%s];\n",
 			indentSpaces,
 			removeSpaces(*f.Title),
 			*f.Title,
 		))
+		// subgraph direction - indented
+		sb.WriteString(fmt.Sprintf("%s%sdirection %s;\n",
+			indentSpaces,
+			"    ",
+			f.Direction.toMermaid(),
+		))
+	} else {
+		if f.Title != nil && *f.Title != "" {
+			sb.WriteString(fmt.Sprintf("---\ntitle: %s\n---\n", *f.Title))
+		}
+		sb.WriteString(fmt.Sprintf("flowchart %s;\n", f.Direction.toMermaid()))
 	}
 
-	// subgraph direction - indented
-	sb.WriteString(fmt.Sprintf("%s%sdirection %s;\n",
-		indentSpaces,
-		"    ",
-		f.Direction.toMermaid(),
-	))
+	// nodes
+	for _, node := range f.Nodes {
+		sb.WriteString(fmt.Sprintf("%s", node.toMermaid(indents+1)))
+	}
 
-	sb.WriteString(f.toMermaid(indents + 1))
+	// subgraphs
+	for _, subgraph := range f.Subgraphs {
+		sb.WriteString(fmt.Sprintf("%s", subgraph.toMermaid(indents+1, true)))
+	}
 
-	// end subgraph
-	sb.WriteString(fmt.Sprintf("%send;\n", indentSpaces))
+	if subgraph {
+		// end subgraph
+		sb.WriteString(fmt.Sprintf("%send;\n", indentSpaces))
+	}
+
+	if !subgraph {
+		allLinks := getAllLinks(f)
+		for _, link := range allLinks {
+			sb.WriteString(fmt.Sprintf("    %s;\n", link.toMermaid()))
+		}
+	}
 
 	return sb.String()
 }
 
-func (f *Flowchart) ToMermaid() string {
-	var sb strings.Builder
-
-	if f.Title != nil && *f.Title != "" {
-		sb.WriteString(fmt.Sprintf("---\ntitle: %s\n---\n", *f.Title))
+func (f *Flowchart) ToMermaid() (string, error) {
+	if !hasValidMermaidNames(f) {
+		return "", fmt.Errorf("flowchart contains invalid mermaid names")
 	}
 
-	sb.WriteString(fmt.Sprintf("flowchart %s;\n", f.Direction.toMermaid()))
-	sb.WriteString(f.toMermaid(1))
+	return f.toMermaid(0, false), nil
+}
 
-	return sb.String()
+func getAllLinks(f *Flowchart) []Link {
+	var allLinks []Link
+
+	allLinks = append(allLinks, f.Links...)
+	for _, subgraph := range f.Subgraphs {
+		allLinks = append(allLinks, getAllLinks(subgraph)...)
+	}
+
+	sort.Slice(allLinks, func(i, j int) bool {
+		if allLinks[i].Origin.nodeName() == allLinks[j].Origin.nodeName() {
+			return allLinks[i].Target.nodeName() < allLinks[j].Target.nodeName()
+		}
+		return allLinks[i].Origin.nodeName() < allLinks[j].Origin.nodeName()
+	})
+
+	return allLinks
+}
+
+func hasValidMermaidNames(f *Flowchart) bool {
+	for _, node := range f.Nodes {
+		if !isValidMermaidNodeName(node.name) {
+			return false
+		}
+	}
+	for _, subgraph := range f.Subgraphs {
+		if subgraph.Title == nil || *subgraph.Title == "" || !hasValidMermaidNames(subgraph) {
+			return false
+		}
+	}
+	return true
+}
+
+func isValidMermaidNodeName(s string) bool {
+	// Define regex for a valid Mermaid.js node name
+	// Allows letters, digits, underscores, and dashes only
+	re := regexp.MustCompile(`^[a-zA-Z0-9_\- ]+$`)
+	return re.MatchString(s)
 }

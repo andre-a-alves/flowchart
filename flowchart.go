@@ -6,14 +6,14 @@ import (
 )
 
 type (
-	FlowchartDirectionEnum int
-	NodeTypeEnum           int
-	LineTypeEnum           int
-	ArrowTypeEnum          int
+	DirectionEnum int
+	NodeTypeEnum  int
+	LineTypeEnum  int
+	ArrowTypeEnum int
 )
 
 const (
-	DirectionHorizontalRight FlowchartDirectionEnum = iota
+	DirectionHorizontalRight DirectionEnum = iota
 	DirectionHorizontalLeft
 	DirectionVertical
 )
@@ -44,7 +44,8 @@ const (
 )
 
 type Link struct {
-	TargetNode  *Node
+	Origin      Linkable
+	Target      Linkable
 	LineType    LineTypeEnum
 	ArrowType   ArrowTypeEnum
 	OriginArrow bool
@@ -52,25 +53,43 @@ type Link struct {
 	Label       *string
 }
 
+type Linkable interface {
+	nodeName() string
+}
+
+func (n *Node) nodeName() string {
+	return n.name
+}
+
+func (f *Flowchart) nodeName() string {
+	if f.Title == nil {
+		return ""
+	}
+	return *f.Title
+}
+
 type Node struct {
 	name  string
 	Type  NodeTypeEnum
 	Label *string
-	Links []Link
 }
 
 type Flowchart struct {
-	Direction FlowchartDirectionEnum
+	Direction DirectionEnum
 	Title     *string
 	Nodes     []*Node
 	Subgraphs []*Flowchart
+	Links     []Link
 }
 
-func (n *Node) AddLink(link Link) error {
-	if link.TargetNode == nil {
+func (f *Flowchart) AddLink(link Link) error {
+	if link.Target == (Linkable)(nil) {
 		return fmt.Errorf("cannot add link with no target node")
 	}
-	n.Links = append(n.Links, link)
+	if link.Origin == (Linkable)(nil) {
+		return fmt.Errorf("cannot add link with no origin node")
+	}
+	f.Links = append(f.Links, link)
 	return nil
 }
 
@@ -111,25 +130,26 @@ func (f *Flowchart) AddSubgraph(subgraph *Flowchart) error {
 	return nil
 }
 
-func BlankLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeNone)
+func BlankLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeNone)
 }
 
-func SolidLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeSolid)
+func SolidLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeSolid)
 }
 
-func DottedLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeDotted)
+func DottedLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeDotted)
 }
 
-func ThickLink(targetNode *Node, label *string) Link {
-	return basicLink(targetNode, label, LineTypeThick)
+func ThickLink(origin, target Linkable, label *string) Link {
+	return basicLink(origin, target, label, LineTypeThick)
 }
 
-func basicLink(targetNode *Node, label *string, lineType LineTypeEnum) Link {
+func basicLink(origin, target Linkable, label *string, lineType LineTypeEnum) Link {
 	return Link{
-		TargetNode:  targetNode,
+		Origin:      origin,
+		Target:      target,
 		LineType:    lineType,
 		ArrowType:   ArrowTypeNormal,
 		OriginArrow: false,
@@ -175,7 +195,6 @@ func basicNode(name string, label *string, typ NodeTypeEnum) *Node {
 		name:  name,
 		Type:  typ,
 		Label: label,
-		Links: make([]Link, 0),
 	}
 }
 
@@ -191,7 +210,7 @@ func RlFlowchart(title *string) *Flowchart {
 	return basicFlowchart(title, DirectionHorizontalLeft)
 }
 
-func basicFlowchart(title *string, direction FlowchartDirectionEnum) *Flowchart {
+func basicFlowchart(title *string, direction DirectionEnum) *Flowchart {
 	return &Flowchart{
 		Direction: direction,
 		Title:     title,
