@@ -454,13 +454,6 @@ func TestNodes(t *testing.T) {
 			}),
 		},
 		{
-			name:     "alternate process",
-			function: AlternateProcessNode,
-			expected: fixtureNode(func(l *Node) {
-				l.Type = NodeTypeAlternateProcess
-			}),
-		},
-		{
 			name:     "subprocess",
 			function: SubprocessNode,
 			expected: fixtureNode(func(l *Node) {

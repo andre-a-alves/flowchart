@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
+func TestMermaidFlowchartDirection(t *testing.T) {
 	tests := []struct {
 		name      string
 		direction DirectionEnum
@@ -35,7 +35,7 @@ func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.direction.toMermaid()
+			got := mermaidFlowchartDirection(tt.direction)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
@@ -43,360 +43,130 @@ func TestFlowchartDirectionEnum_toMermaid(t *testing.T) {
 	}
 }
 
-func TestArrowTypeEnum_toMermaidOriginString(t *testing.T) {
+func TestRenderArrows(t *testing.T) {
 	tests := []struct {
-		name     string
-		arrow    ArrowTypeEnum
-		expected string
+		name                string
+		link                Link
+		expectedOriginArrow string
+		expectedTargetArrow string
 	}{
 		{
-			name:     "Normal arrow",
-			arrow:    ArrowTypeNormal,
-			expected: "<",
+			name: "arrow type none",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				TargetArrow: false,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: "",
 		},
 		{
-			name:     "Cross arrow",
-			arrow:    ArrowTypeCross,
-			expected: "x",
+			name: "target arrow no",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: true,
+				TargetArrow: false,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: "",
 		},
 		{
-			name:     "Circle arrow",
-			arrow:    ArrowTypeCircle,
-			expected: "o",
+			name: "normal arrow, target arrow yes, origin arrow yes",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: true,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "<",
+			expectedTargetArrow: ">",
 		},
 		{
-			name:     "No arrow",
-			arrow:    ArrowTypeNone,
-			expected: "",
+			name: "normal arrow, target arrow yes, origin arrow no",
+			link: Link{
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: false,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: ">",
 		},
 		{
-			name:     "Invalid arrow",
-			arrow:    ArrowTypeEnum(999), // Some invalid value
-			expected: "",
+			name: "circle arrow, target arrow yes, origin arrow yes",
+			link: Link{
+				ArrowType:   ArrowTypeCircle,
+				OriginArrow: true,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "o",
+			expectedTargetArrow: "o",
+		},
+		{
+			name: "circle arrow, target arrow yes, origin arrow no",
+			link: Link{
+				ArrowType:   ArrowTypeCircle,
+				OriginArrow: false,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: "o",
+		},
+		{
+			name: "cross arrow, target arrow yes, origin arrow yes",
+			link: Link{
+				ArrowType:   ArrowTypeCross,
+				OriginArrow: true,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "x",
+			expectedTargetArrow: "x",
+		},
+		{
+			name: "cross arrow, target arrow yes, origin arrow no",
+			link: Link{
+				ArrowType:   ArrowTypeCross,
+				OriginArrow: false,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: "x",
+		},
+		{
+			name: "cross arrow, target arrow yes, origin arrow no",
+			link: Link{
+				ArrowType:   ArrowTypeEnum(-1),
+				OriginArrow: true,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: "",
+		},
+		{
+			name: "cross arrow, target arrow yes, origin arrow no",
+			link: Link{
+				ArrowType:   ArrowTypeEnum(-1),
+				OriginArrow: false,
+				TargetArrow: true,
+			},
+			expectedOriginArrow: "",
+			expectedTargetArrow: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.arrow.toMermaidOrigin()
+			gotOriginArrow, gotTargetArrow := renderArrows(tt.link)
 
-			// Compare the result using cmp.Diff
-			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf("toMermaidOrigin() mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.expectedOriginArrow, gotOriginArrow); diff != "" {
+				t.Errorf("renderArrows() origin mismatch (-expected +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(tt.expectedTargetArrow, gotTargetArrow); diff != "" {
+				t.Errorf("renderArrows() target mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestArrowTypeEnum_toMermaidTargetString(t *testing.T) {
-	tests := []struct {
-		name     string
-		arrow    ArrowTypeEnum
-		expected string
-	}{
-		{
-			name:     "Normal arrow",
-			arrow:    ArrowTypeNormal,
-			expected: ">",
-		},
-		{
-			name:     "Cross arrow",
-			arrow:    ArrowTypeCross,
-			expected: "x",
-		},
-		{
-			name:     "Circle arrow",
-			arrow:    ArrowTypeCircle,
-			expected: "o",
-		},
-		{
-			name:     "No arrow",
-			arrow:    ArrowTypeNone,
-			expected: "",
-		},
-		{
-			name:     "Invalid arrow",
-			arrow:    ArrowTypeEnum(999), // Some invalid value
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.arrow.toMermaidTarget()
-
-			// Compare the result using cmp.Diff
-			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf("toMermaidTarget() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestLineTypeEnum_toMermaidOrigin(t *testing.T) {
-	tests := []struct {
-		name     string
-		lineType LineTypeEnum
-		expected string
-	}{
-		{
-			name:     "Dotted line",
-			lineType: LineTypeDotted,
-			expected: "-.",
-		},
-		{
-			name:     "Solid line",
-			lineType: LineTypeSolid,
-			expected: "--",
-		},
-		{
-			name:     "Thick line",
-			lineType: LineTypeThick,
-			expected: "==",
-		},
-		{
-			name:     "No line",
-			lineType: LineTypeNone,
-			expected: "",
-		},
-		{
-			name:     "Invalid line type",
-			lineType: LineTypeEnum(999), // Invalid value
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.lineType.toMermaidOrigin()
-
-			// Compare result using cmp.Diff
-			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf("toMermaidOrigin() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestLineTypeEnum_toMermaidTarget(t *testing.T) {
-	tests := []struct {
-		name     string
-		lineType LineTypeEnum
-		expected string
-	}{
-		{
-			name:     "Dotted line",
-			lineType: LineTypeDotted,
-			expected: ".-",
-		},
-		{
-			name:     "Solid line",
-			lineType: LineTypeSolid,
-			expected: "--",
-		},
-		{
-			name:     "Thick line",
-			lineType: LineTypeThick,
-			expected: "==",
-		},
-		{
-			name:     "No line",
-			lineType: LineTypeNone,
-			expected: "",
-		},
-		{
-			name:     "Invalid line type",
-			lineType: LineTypeEnum(999), // Invalid value
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.lineType.toMermaidTarget()
-
-			// Compare result using cmp.Diff
-			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf("toMermaidTarget() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestLineTypeEnum_toMermaidBidirectional(t *testing.T) {
-	tests := []struct {
-		name     string
-		lineType LineTypeEnum
-		expected string
-	}{
-		{
-			name:     "Solid line",
-			lineType: LineTypeSolid,
-			expected: "---",
-		},
-		{
-			name:     "Dotted line",
-			lineType: LineTypeDotted,
-			expected: "-.-",
-		},
-		{
-			name:     "Thick line",
-			lineType: LineTypeThick,
-			expected: "===",
-		},
-		{
-			name:     "No line",
-			lineType: LineTypeNone,
-			expected: "~~~",
-		},
-		{
-			name:     "Invalid line type",
-			lineType: LineTypeEnum(999), // Invalid value
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.lineType.toMermaidBidirectional()
-
-			// Compare result using cmp.Diff
-			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf("toMermaidBidirectional() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestNodeTypeEnum_toMermaidLeft(t *testing.T) {
-	tests := []struct {
-		name     string
-		nodeType NodeTypeEnum
-		expected string
-	}{
-		{
-			name:     "Terminator left",
-			nodeType: NodeTypeTerminator,
-			expected: "(",
-		},
-		{
-			name:     "Process left",
-			nodeType: NodeTypeProcess,
-			expected: "[",
-		},
-		{
-			name:     "AlternateProcess left",
-			nodeType: NodeTypeAlternateProcess,
-			expected: "([",
-		},
-		{
-			name:     "Subprocess left",
-			nodeType: NodeTypeSubprocess,
-			expected: "[[",
-		},
-		{
-			name:     "Decision left",
-			nodeType: NodeTypeDecision,
-			expected: "{",
-		},
-		{
-			name:     "InputOutput left",
-			nodeType: NodeTypeInputOutput,
-			expected: "[/",
-		},
-		{
-			name:     "Connector left",
-			nodeType: NodeTypeConnector,
-			expected: "((",
-		},
-		{
-			name:     "Database left",
-			nodeType: NodeTypeDatabase,
-			expected: "[(",
-		},
-		{
-			name:     "Default left (invalid node type)",
-			nodeType: NodeTypeEnum(-1), // Unknown NodeTypeEnum
-			expected: "(",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.nodeType.toMermaidLeft()
-
-			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaidLeft() mismatch (-expected +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestNodeTypeEnum_toMermaidRight(t *testing.T) {
-	tests := []struct {
-		name     string
-		nodeType NodeTypeEnum
-		expected string
-	}{
-		{
-			name:     "Terminator right",
-			nodeType: NodeTypeTerminator,
-			expected: ")",
-		},
-		{
-			name:     "Process right",
-			nodeType: NodeTypeProcess,
-			expected: "]",
-		},
-		{
-			name:     "AlternateProcess right",
-			nodeType: NodeTypeAlternateProcess,
-			expected: "])",
-		},
-		{
-			name:     "Subprocess right",
-			nodeType: NodeTypeSubprocess,
-			expected: "]]",
-		},
-		{
-			name:     "Decision right",
-			nodeType: NodeTypeDecision,
-			expected: "}",
-		},
-		{
-			name:     "InputOutput right",
-			nodeType: NodeTypeInputOutput,
-			expected: "/]",
-		},
-		{
-			name:     "Connector right",
-			nodeType: NodeTypeConnector,
-			expected: "))",
-		},
-		{
-			name:     "Database right",
-			nodeType: NodeTypeDatabase,
-			expected: ")]",
-		},
-		{
-			name:     "Default right (invalid node type)",
-			nodeType: NodeTypeEnum(-1), // Unknown NodeTypeEnum
-			expected: ")",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.nodeType.toMermaidRight()
-
-			if diff := cmp.Diff(tt.expected, got); diff != "" {
-				t.Errorf("toMermaidRight() mismatch (-expected +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestLink_toMermaid(t *testing.T) {
+func TestRenderMermaidLink(t *testing.T) {
 	fixtureOriginSubgraph := Flowchart{Title: pointTo("Origin")}
 	fixtureTargetNode := Node{name: "Target"}
 
@@ -523,6 +293,19 @@ func TestLink_toMermaid(t *testing.T) {
 			expected: "Origin === Target",
 		},
 		{
+			name: "thick line - no label with arrows",
+			link: Link{
+				ArrowType:   ArrowTypeCircle,
+				OriginArrow: true,
+				LineType:    LineTypeThick,
+				TargetArrow: true,
+				Label:       nil,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
+			},
+			expected: "Origin o==o Target",
+		},
+		{
 			name: "thick line - with label",
 			link: Link{
 				ArrowType:   ArrowTypeNone,
@@ -546,7 +329,7 @@ func TestLink_toMermaid(t *testing.T) {
 				Origin:      &fixtureOriginSubgraph,
 				Target:      &fixtureTargetNode,
 			},
-			expected: "Origin -- Target",
+			expected: "Origin --- Target",
 		},
 		{
 			name: "target arrow yes",
@@ -574,11 +357,37 @@ func TestLink_toMermaid(t *testing.T) {
 			},
 			expected: "Origin <--> Target",
 		},
+		{
+			name: "unhandled line type with no label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeEnum(-1),
+				TargetArrow: false,
+				Label:       nil,
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
+			},
+			expected: "",
+		},
+		{
+			name: "unhandled line type with label",
+			link: Link{
+				ArrowType:   ArrowTypeNone,
+				OriginArrow: false,
+				LineType:    LineTypeEnum(-1),
+				TargetArrow: false,
+				Label:       pointTo("label"),
+				Origin:      &fixtureOriginSubgraph,
+				Target:      &fixtureTargetNode,
+			},
+			expected: "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.link.toMermaid()
+			got := renderMermaidLink(tt.link)
 
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
@@ -587,7 +396,7 @@ func TestLink_toMermaid(t *testing.T) {
 	}
 }
 
-func TestNode_toMermaid(t *testing.T) {
+func TestRenderMermaidNode(t *testing.T) {
 	tests := []struct {
 		name     string
 		node     *Node
@@ -627,7 +436,7 @@ func TestNode_toMermaid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.node.toMermaid(tt.indents)
+			got := renderMermaidNode(tt.node, tt.indents)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
@@ -657,13 +466,6 @@ func TestNode_toMermaid(t *testing.T) {
 			nodeType: NodeTypeProcess,
 			label:    fixtureLabel,
 			expected: "node[\"a label\"];\n",
-		},
-		{
-			name:     "alternate process",
-			nodeName: fixtureNodeName,
-			nodeType: NodeTypeAlternateProcess,
-			label:    fixtureLabel,
-			expected: "node([\"a label\"]);\n",
 		},
 		{
 			name:     "subprocess",
@@ -715,7 +517,7 @@ func TestNode_toMermaid(t *testing.T) {
 				Type:  tt.nodeType,
 				Label: tt.label,
 			}
-			got := node.toMermaid(0)
+			got := renderMermaidNode(node, 0)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
@@ -723,7 +525,7 @@ func TestNode_toMermaid(t *testing.T) {
 	}
 }
 
-func TestFlowchart_toMermaid(t *testing.T) {
+func TestRenderMermaidFlowchart(t *testing.T) {
 	tests := []struct {
 		name        string
 		flowchart   *Flowchart
@@ -807,7 +609,7 @@ end;
 					t.Error("expected panic but none occurred")
 				}
 			}()
-			got := tt.flowchart.toMermaid(tt.indents, true)
+			got := renderMermaidFlowchart(tt.flowchart, tt.indents, true)
 			if tt.flowchart.Title == nil {
 				if diff := cmp.Diff(tt.expected, got); diff != "" {
 					t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
@@ -821,7 +623,7 @@ end;
 	}
 }
 
-func TestFlowchart_ToMermaid(t *testing.T) {
+func TestRenderMermaid(t *testing.T) {
 	tests := []struct {
 		name        string
 		flowchart   *Flowchart
@@ -879,7 +681,7 @@ flowchart LR;
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.flowchart.ToMermaid()
+			got, err := RenderMermaid(tt.flowchart)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
 			}
