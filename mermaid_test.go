@@ -823,9 +823,10 @@ end;
 
 func TestFlowchart_ToMermaid(t *testing.T) {
 	tests := []struct {
-		name      string
-		flowchart *Flowchart
-		expected  string
+		name        string
+		flowchart   *Flowchart
+		expected    string
+		expectedErr bool
 	}{
 		{
 			name: "invalid mermaid name",
@@ -833,7 +834,8 @@ func TestFlowchart_ToMermaid(t *testing.T) {
 				Direction: DirectionHorizontalRight,
 				Nodes:     []*Node{{name: "("}},
 			},
-			expected: "invalid mermaid string",
+			expected:    "",
+			expectedErr: true,
 		},
 		{
 			name: "Flowchart with no title",
@@ -841,7 +843,8 @@ func TestFlowchart_ToMermaid(t *testing.T) {
 				Direction: DirectionHorizontalRight,
 				Nodes:     []*Node{{name: "Node One"}},
 			},
-			expected: "flowchart LR;\n    NodeOne;\n",
+			expected:    "flowchart LR;\n    NodeOne;\n",
+			expectedErr: false,
 		},
 		{
 			name:      "Full Flowchart with title",
@@ -870,14 +873,18 @@ flowchart LR;
     NodeTwo --> NodeFour;
     NodeTwo --> NodeThree;
 `,
+			expectedErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.flowchart.ToMermaid()
+			got, err := tt.flowchart.ToMermaid()
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
 				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
+			}
+			if (err == nil) == tt.expectedErr {
+				t.Errorf("ToMermaid() error = %v, expected %v", err, tt.expectedErr)
 			}
 		})
 	}

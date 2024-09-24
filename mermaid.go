@@ -229,12 +229,12 @@ func (f *Flowchart) toMermaid(indents int, subgraph bool) string {
 	return sb.String()
 }
 
-func (f *Flowchart) ToMermaid() string {
+func (f *Flowchart) ToMermaid() (string, error) {
 	if !hasValidMermaidNames(f) {
-		return "invalid mermaid string"
+		return "", fmt.Errorf("flowchart contains invalid mermaid names")
 	}
 
-	return f.toMermaid(0, false)
+	return f.toMermaid(0, false), nil
 }
 
 func getAllLinks(f *Flowchart) []Link {
