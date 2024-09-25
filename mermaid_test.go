@@ -692,6 +692,188 @@ flowchart LR;
 	}
 }
 
+func TestValidateMermaid(t *testing.T) {
+	// Helper nodes and subgraphs
+	validNode := &Node{name: "ValidNode", Type: NodeTypeProcess, Label: pointTo("Valid Node")}
+	invalidNode := &Node{name: "Invalid@Node", Type: NodeTypeProcess, Label: pointTo("Invalid Node")}
+	duplicateNode := &Node{name: "DuplicateNode", Type: NodeTypeProcess, Label: pointTo("Duplicate Node")}
+	subgraphWithNested := &Flowchart{
+		Title:     pointTo("SubgraphWithNested"),
+		Direction: DirectionVertical,
+		Nodes:     []*Node{{name: "NestedNode"}},
+		Subgraphs: []*Flowchart{
+			{
+				Title:     pointTo("NestedSubgraph"),
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{{name: "AnotherNestedNode"}},
+			},
+		},
+	}
+	subgraphWithoutNested := &Flowchart{
+		Title:     pointTo("SubgraphWithoutNested"),
+		Direction: DirectionHorizontalLeft,
+		Nodes:     []*Node{{name: "SubgraphNode"}},
+		Subgraphs: []*Flowchart{},
+	}
+
+	tests := []struct {
+		name          string
+		flowchart     *Flowchart
+		expectedError string
+	}{
+		{
+			name: "Valid flowchart with unique, valid names and no nested subgraphs",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{validNode},
+				Subgraphs: []*Flowchart{subgraphWithoutNested},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Invalid flowchart with invalid node names",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{validNode, invalidNode},
+				Subgraphs: []*Flowchart{subgraphWithoutNested},
+			},
+			expectedError: "flowchart contains violations: contains invalid mermaid names",
+		},
+		{
+			name: "Invalid flowchart with nested subgraphs",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{validNode},
+				Subgraphs: []*Flowchart{subgraphWithNested},
+			},
+			expectedError: "flowchart contains violations: contains nested subgraphs",
+		},
+		{
+			name: "Invalid flowchart with duplicate node names",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionHorizontalLeft,
+				Nodes:     []*Node{duplicateNode, duplicateNode},
+				Subgraphs: []*Flowchart{subgraphWithoutNested},
+			},
+			expectedError: "flowchart contains violations: contains repeated node and/or subgraph names",
+		},
+		{
+			name: "Invalid flowchart with duplicate subgraph titles",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{validNode},
+				Subgraphs: []*Flowchart{
+					subgraphWithoutNested,
+					{
+						Title:     pointTo("SubgraphWithoutNested"),
+						Direction: DirectionVertical,
+						Nodes:     []*Node{{name: "AnotherNode"}},
+						Subgraphs: []*Flowchart{},
+					},
+				},
+			},
+			expectedError: "flowchart contains violations: contains repeated node and/or subgraph names",
+		},
+		{
+			name: "Invalid flowchart with multiple violations: invalid names and nested subgraphs",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{validNode, invalidNode},
+				Subgraphs: []*Flowchart{subgraphWithNested},
+			},
+			expectedError: "flowchart contains violations: contains invalid mermaid names, contains nested subgraphs",
+		},
+		{
+			name: "Invalid flowchart with all three violations: invalid names, nested subgraphs, and duplicate names",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{validNode, invalidNode, duplicateNode, duplicateNode},
+				Subgraphs: []*Flowchart{subgraphWithNested},
+			},
+			expectedError: "flowchart contains violations: contains invalid mermaid names, contains nested subgraphs, contains repeated node and/or subgraph names",
+		},
+		{
+			name: "Valid flowchart with multiple unique subgraphs and nodes",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{validNode, duplicateNode}, // Assuming "duplicateNode" name is unique here
+				Subgraphs: []*Flowchart{
+					{
+						Title:     pointTo("Subgraph1"),
+						Direction: DirectionHorizontalRight,
+						Nodes:     []*Node{{name: "Subgraph1Node1"}},
+					},
+					{
+						Title:     pointTo("Subgraph2"),
+						Direction: DirectionHorizontalLeft,
+						Nodes:     []*Node{{name: "Subgraph2Node1"}},
+					},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Empty flowchart (no nodes, no subgraphs)",
+			flowchart: &Flowchart{
+				Title:     pointTo("EmptyFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{},
+				Subgraphs: []*Flowchart{},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Flowchart with no title but valid nodes and no subgraphs",
+			flowchart: &Flowchart{
+				Title:     nil,
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{validNode},
+				Subgraphs: []*Flowchart{},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Subgraph without title",
+			flowchart: &Flowchart{
+				Title:     pointTo("MainFlowchart"),
+				Direction: DirectionVertical,
+				Nodes:     []*Node{validNode},
+				Subgraphs: []*Flowchart{
+					{
+						Title:     nil,
+						Direction: DirectionHorizontalRight,
+						Nodes:     []*Node{{name: "SubgraphNode"}},
+					},
+				},
+			},
+			expectedError: "flowchart contains violations: contains invalid mermaid names",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateMermaid(tt.flowchart)
+			if tt.expectedError == "" && err != nil {
+				t.Errorf("validateMermaid() unexpected error: %v", err)
+			} else if tt.expectedError != "" {
+				if err == nil {
+					t.Errorf("validateMermaid() expected error '%s', but got nil", tt.expectedError)
+				} else if err.Error() != tt.expectedError {
+					t.Errorf("validateMermaid() expected error '%s', got '%s'", tt.expectedError, err.Error())
+				}
+			}
+		})
+	}
+}
+
 func fixtureFlowchart() *Flowchart {
 	nodeOne := ProcessNode("Node One", nil)
 	nodeTwo := ProcessNode("Node Two", nil)
