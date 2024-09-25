@@ -37,18 +37,17 @@ func main() {
 	processNode := flowchart.ProcessNode("Process1", nil)
 	decisionNode := flowchart.DecisionNode("Decision1", nil)
 
-	// Create links
-	link := flowchart.SolidLink(decisionNode, nil)
+	// Create a solid link between nodes
+	link := flowchart.SolidLink(processNode, decisionNode, nil)
 
-	// Add link to node
-	processNode.AddLink(link)
-
-	// Create flowchart
+	// Create flowchart and add nodes and links
 	chart := flowchart.VerticalFlowchart(nil)
 	chart.AddNode(processNode)
+	chart.AddNode(decisionNode)
+	chart.AddLink(link)
 
 	// Output Mermaid syntax
-	fmt.Println(chart.ToMermaid())
+	fmt.Println(flowchart.RenderMermaid(chart))
 }
 ```
 
