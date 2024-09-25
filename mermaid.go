@@ -338,3 +338,90 @@ func isValidMermaidNodeName(s string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9_\- ]+$`)
 	return re.MatchString(s)
 }
+
+// GetMermaidFriendlyFlowchart transforms a Flowchart into a Mermaid-friendly version.
+// It performs the following steps:
+// 1. Flattens all nested subgraphs into a single-level structure.
+// 2. Removes any nodes, subgraphs, and links that do not conform to Mermaid.js naming conventions.
+//
+// Parameters:
+// - f: A pointer to the original Flowchart to be transformed.
+//
+// Returns:
+// - *Flowchart: A new Flowchart instance that is compatible with Mermaid.js rendering.
+func GetMermaidFriendlyFlowchart(f *Flowchart) *Flowchart {
+	var subgraphs []*Flowchart
+	for _, subgraph := range f.Subgraphs {
+		subgraphs = append(subgraphs, flattenFlowchart(subgraph))
+	}
+
+	return removeNonMermaidNames(&Flowchart{
+		Direction: f.Direction,
+		Title:     f.Title,
+		Nodes:     f.Nodes,
+		Subgraphs: subgraphs,
+		Links:     f.Links,
+	})
+}
+
+// removeNonMermaidNames filters out any nodes, subgraphs, and links that have names
+// not compliant with Mermaid.js naming conventions. It ensures that only valid
+// elements are retained in the Flowchart.
+//
+// Parameters:
+// - f: A pointer to the Flowchart to be filtered.
+//
+// Returns:
+// - *Flowchart: A new Flowchart instance with only Mermaid-compliant nodes, subgraphs, and links.
+func removeNonMermaidNames(f *Flowchart) *Flowchart {
+	var nodes []*Node
+	for _, node := range f.Nodes {
+		if isValidMermaidNodeName(node.name) {
+			nodes = append(nodes, node)
+		}
+	}
+	var subgraphs []*Flowchart
+	for _, subgraph := range f.Subgraphs {
+		if subgraph.Title != nil && *subgraph.Title != "" && isValidMermaidNodeName(*subgraph.Title) {
+			subgraphs = append(subgraphs, removeNonMermaidNames(subgraph))
+		}
+	}
+	var links []Link
+	for _, link := range f.Links {
+		if isValidMermaidNodeName(link.Origin.nodeName()) && isValidMermaidNodeName(link.Target.nodeName()) {
+			links = append(links, link)
+		}
+	}
+
+	return &Flowchart{
+		Direction: f.Direction,
+		Title:     f.Title,
+		Nodes:     nodes,
+		Subgraphs: subgraphs,
+		Links:     links,
+	}
+}
+
+// flattenFlowchart recursively flattens a Flowchart by aggregating all nodes and links
+// from its subgraphs into a single-level structure.
+func flattenFlowchart(f *Flowchart) *Flowchart {
+	var nodes []*Node
+	var links []Link
+
+	nodes = append(nodes, f.Nodes...)
+	links = append(links, f.Links...)
+
+	for _, subgraph := range f.Subgraphs {
+		flattenedSubgraph := flattenFlowchart(subgraph)
+		nodes = append(nodes, flattenedSubgraph.Nodes...)
+		links = append(links, flattenedSubgraph.Links...)
+	}
+
+	return &Flowchart{
+		Direction: f.Direction,
+		Title:     f.Title,
+		Nodes:     nodes,
+		Subgraphs: nil, // Subgraphs are flattened
+		Links:     links,
+	}
+}

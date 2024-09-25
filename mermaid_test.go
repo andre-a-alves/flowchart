@@ -2,6 +2,7 @@ package flowchart
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"testing"
 )
 
@@ -631,15 +632,6 @@ func TestRenderMermaid(t *testing.T) {
 		expectedErr bool
 	}{
 		{
-			name: "invalid mermaid name",
-			flowchart: &Flowchart{
-				Direction: DirectionHorizontalRight,
-				Nodes:     []*Node{{name: "("}},
-			},
-			expected:    "",
-			expectedErr: true,
-		},
-		{
 			name: "Flowchart with no title",
 			flowchart: &Flowchart{
 				Direction: DirectionHorizontalRight,
@@ -663,11 +655,8 @@ flowchart LR;
         direction TB;
         NodeFive;
         NodeSix;
-        subgraph SubgraphTwo [Subgraph Two];
-            direction RL;
-            NodeSeven;
-            NodeEight;
-        end;
+        NodeSeven;
+        NodeEight;
     end;
     NodeFive --> NodeSix;
     NodeOne --> NodeTwo;
@@ -678,8 +667,35 @@ flowchart LR;
 			expectedErr: false,
 		},
 	}
-
 	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := RenderMermaid(GetMermaidFriendlyFlowchart(tt.flowchart))
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Errorf("toMermaid() mismatch (-expected +got):\n%s", diff)
+			}
+			if (err == nil) == tt.expectedErr {
+				t.Errorf("ToMermaid() error = %v, expected %v", err, tt.expectedErr)
+			}
+		})
+	}
+
+	invalidTests := []struct {
+		name        string
+		flowchart   *Flowchart
+		expected    string
+		expectedErr bool
+	}{
+		{
+			name: "invalid mermaid name",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{{name: "("}},
+			},
+			expected:    "",
+			expectedErr: true,
+		},
+	}
+	for _, tt := range invalidTests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := RenderMermaid(tt.flowchart)
 			if diff := cmp.Diff(tt.expected, got); diff != "" {
@@ -1065,5 +1081,582 @@ func TestIsValidMermaidNodeName(t *testing.T) {
 				t.Errorf("isValidMermaidNodeName() mismatch (-expected +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestFlattenFlowchart(t *testing.T) {
+	// Define helper nodes
+	node1 := &Node{name: "Node1", Type: NodeTypeProcess, Label: pointTo("Process 1")}
+	node2 := &Node{name: "Node2", Type: NodeTypeDecision, Label: pointTo("Decision 2")}
+	node3 := &Node{name: "Node3", Type: NodeTypeProcess, Label: pointTo("Process 3")}
+	node4 := &Node{name: "Node4", Type: NodeTypeDatabase, Label: pointTo("Database 4")}
+	node5 := &Node{name: "Node5", Type: NodeTypeSubprocess, Label: pointTo("Start 5")}
+
+	// Define subgraphs
+	emptySubgraph := &Flowchart{
+		Title:     pointTo("EmptySubgraph"),
+		Direction: DirectionVertical,
+		Nodes:     []*Node{},
+		Subgraphs: []*Flowchart{},
+		Links:     []Link{},
+	}
+
+	subgraphWithNodes := &Flowchart{
+		Title:     pointTo("SubgraphWithNodes"),
+		Direction: DirectionHorizontalRight,
+		Nodes:     []*Node{node2},
+		Subgraphs: []*Flowchart{},
+		Links: []Link{
+			{
+				Origin:      node1,
+				Target:      node2,
+				LineType:    LineTypeSolid,
+				ArrowType:   ArrowTypeNormal,
+				OriginArrow: false,
+				TargetArrow: true,
+				Label:       pointTo("Link1"),
+			},
+		},
+	}
+
+	nestedSubgraph := &Flowchart{
+		Title:     pointTo("NestedSubgraph"),
+		Direction: DirectionVertical,
+		Nodes:     []*Node{node3},
+		Subgraphs: []*Flowchart{
+			{
+				Title:     pointTo("DeepNestedSubgraph"),
+				Direction: DirectionHorizontalRight,
+				Nodes:     []*Node{node4},
+				Subgraphs: []*Flowchart{},
+				Links: []Link{
+					{
+						Origin:      node3,
+						Target:      node4,
+						LineType:    LineTypeDotted,
+						ArrowType:   ArrowTypeCross,
+						OriginArrow: true,
+						TargetArrow: false,
+						Label:       pointTo("Link2"),
+					},
+				},
+			},
+		},
+		Links: []Link{},
+	}
+
+	subgraphWithEmptySubgraph := &Flowchart{
+		Title:     pointTo("SubgraphWithEmptySubgraph"),
+		Direction: DirectionVertical,
+		Nodes:     []*Node{node5},
+		Subgraphs: []*Flowchart{emptySubgraph},
+		Links:     []Link{},
+	}
+
+	// Define test cases
+	tests := []struct {
+		name         string
+		flowchart    *Flowchart
+		expectedFlow *Flowchart
+	}{
+		{
+			name: "Empty flowchart",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("EmptyFlowchart"),
+				Nodes:     []*Node{},
+				Subgraphs: []*Flowchart{},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("EmptyFlowchart"),
+				Nodes:     []*Node{},
+				Subgraphs: nil,
+				Links:     []Link{},
+			},
+		},
+		{
+			name: "Flowchart with nodes and links, no subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("SimpleFlowchart"),
+				Nodes:     []*Node{node1, node2},
+				Subgraphs: []*Flowchart{},
+				Links: []Link{
+					{
+						Origin:      node1,
+						Target:      node2,
+						LineType:    LineTypeSolid,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: false,
+						TargetArrow: true,
+						Label:       pointTo("Link1"),
+					},
+				},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("SimpleFlowchart"),
+				Nodes:     []*Node{node1, node2},
+				Subgraphs: nil,
+				Links: []Link{
+					{
+						Origin:      node1,
+						Target:      node2,
+						LineType:    LineTypeSolid,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: false,
+						TargetArrow: true,
+						Label:       pointTo("Link1"),
+					},
+				},
+			},
+		},
+		{
+			name: "Flowchart with empty subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("FlowchartWithEmptySubgraphs"),
+				Nodes:     []*Node{node1},
+				Subgraphs: []*Flowchart{emptySubgraph},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("FlowchartWithEmptySubgraphs"),
+				Nodes:     []*Node{node1},
+				Subgraphs: nil,
+				Links:     []Link{},
+			},
+		},
+		{
+			name: "Flowchart with subgraphs that have nodes and links",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("FlowchartWithSubgraphs"),
+				Nodes:     []*Node{node1},
+				Subgraphs: []*Flowchart{subgraphWithNodes},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("FlowchartWithSubgraphs"),
+				Nodes:     []*Node{node1, node2},
+				Subgraphs: nil,
+				Links: []Link{
+					{
+						Origin:      node1,
+						Target:      node2,
+						LineType:    LineTypeSolid,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: false,
+						TargetArrow: true,
+						Label:       pointTo("Link1"),
+					},
+				},
+			},
+		},
+		{
+			name: "Flowchart with nested subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("FlowchartWithNestedSubgraphs"),
+				Nodes:     []*Node{node1},
+				Subgraphs: []*Flowchart{nestedSubgraph},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("FlowchartWithNestedSubgraphs"),
+				Nodes:     []*Node{node1, node3, node4},
+				Subgraphs: nil,
+				Links: []Link{
+					{
+						Origin:      node3,
+						Target:      node4,
+						LineType:    LineTypeDotted,
+						ArrowType:   ArrowTypeCross,
+						OriginArrow: true,
+						TargetArrow: false,
+						Label:       pointTo("Link2"),
+					},
+				},
+			},
+		},
+		{
+			name: "Flowchart with subgraphs containing empty subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("FlowchartWithSubgraphsAndEmptySubgraphs"),
+				Nodes:     []*Node{node1},
+				Subgraphs: []*Flowchart{subgraphWithEmptySubgraph},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("FlowchartWithSubgraphsAndEmptySubgraphs"),
+				Nodes:     []*Node{node1, node5},
+				Subgraphs: nil,
+				Links:     []Link{},
+			},
+		},
+		{
+			name: "Flowchart with multiple subgraphs and links",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("ComplexFlowchart"),
+				Nodes:     []*Node{node1},
+				Subgraphs: []*Flowchart{subgraphWithNodes, nestedSubgraph},
+				Links: []Link{
+					{
+						Origin:      node1,
+						Target:      node3,
+						LineType:    LineTypeThick,
+						ArrowType:   ArrowTypeCircle,
+						OriginArrow: true,
+						TargetArrow: true,
+						Label:       pointTo("Link3"),
+					},
+				},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("ComplexFlowchart"),
+				Nodes:     []*Node{node1, node2, node3, node4},
+				Subgraphs: nil,
+				Links: []Link{
+					{
+						Origin:      node1,
+						Target:      node3,
+						LineType:    LineTypeThick,
+						ArrowType:   ArrowTypeCircle,
+						OriginArrow: true,
+						TargetArrow: true,
+						Label:       pointTo("Link3"),
+					},
+					{
+						Origin:      node1,
+						Target:      node2,
+						LineType:    LineTypeSolid,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: false,
+						TargetArrow: true,
+						Label:       pointTo("Link1"),
+					},
+					{
+						Origin:      node3,
+						Target:      node4,
+						LineType:    LineTypeDotted,
+						ArrowType:   ArrowTypeCross,
+						OriginArrow: true,
+						TargetArrow: false,
+						Label:       pointTo("Link2"),
+					},
+				},
+			},
+		},
+	}
+
+	// Execute tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := flattenFlowchart(tt.flowchart)
+			if diff := cmp.Diff(tt.expectedFlow, result, cmp.AllowUnexported(Node{}), cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("flattenFlowchart() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestRemoveNonMermaidNames(t *testing.T) {
+	// Define helper nodes
+	validNode1 := &Node{name: "ValidNode1", Type: NodeTypeProcess, Label: pointTo("Valid Node 1")}
+	validNode2 := &Node{name: "ValidNode2", Type: NodeTypeDecision, Label: pointTo("Valid Node 2")}
+	invalidNode := &Node{name: "Invalid@Node", Type: NodeTypeProcess, Label: pointTo("Invalid Node")}
+
+	// Define subgraph titles
+	validTitle := "ValidSubgraph"
+	invalidTitle := "Invalid@Subgraph"
+	emptyTitle := ""
+	nilTitle := (*string)(nil)
+
+	// Subgraph with valid title
+	validSubgraph := &Flowchart{
+		Title:     &validTitle,
+		Direction: DirectionVertical,
+		Nodes:     []*Node{validNode1},
+		Subgraphs: []*Flowchart{},
+		Links:     []Link{},
+	}
+
+	// Subgraph with invalid title
+	invalidSubgraph := &Flowchart{
+		Title:     &invalidTitle,
+		Direction: DirectionHorizontalRight,
+		Nodes:     []*Node{validNode2},
+		Subgraphs: []*Flowchart{},
+		Links:     []Link{},
+	}
+
+	// Subgraph with empty title
+	emptyTitleSubgraph := &Flowchart{
+		Title:     &emptyTitle,
+		Direction: DirectionHorizontalRight,
+		Nodes:     []*Node{invalidNode},
+		Subgraphs: []*Flowchart{},
+		Links:     []Link{},
+	}
+
+	// Subgraph with nil title
+	nilTitleSubgraph := &Flowchart{
+		Title:     nilTitle,
+		Direction: DirectionVertical,
+		Nodes:     []*Node{invalidNode},
+		Subgraphs: []*Flowchart{},
+		Links:     []Link{},
+	}
+
+	tests := []struct {
+		name         string
+		flowchart    *Flowchart
+		expectedFlow *Flowchart
+	}{
+		{
+			name: "Flowchart with valid nodes and valid subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{validNode1},
+				Subgraphs: []*Flowchart{validSubgraph},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{validNode1},
+				Subgraphs: []*Flowchart{
+					{
+						Direction: validSubgraph.Direction,
+						Title:     validSubgraph.Title,
+						Nodes:     []*Node{validNode1},
+						Subgraphs: []*Flowchart{},
+						Links:     []Link{},
+					},
+				},
+				Links: []Link{},
+			},
+		},
+		{
+			name: "Flowchart with invalid nodes and invalid subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{invalidNode},
+				Subgraphs: []*Flowchart{invalidSubgraph},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{},      // Invalid nodes are excluded
+				Subgraphs: []*Flowchart{}, // Invalid subgraphs are excluded
+				Links:     []Link{},
+			},
+		},
+		{
+			name: "Flowchart with nodes and subgraphs with nil and empty titles",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{validNode1, invalidNode},
+				Subgraphs: []*Flowchart{nilTitleSubgraph, emptyTitleSubgraph},
+				Links: []Link{
+					{
+						Origin:      validNode1,
+						Target:      invalidNode,
+						LineType:    LineTypeSolid,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: false,
+						TargetArrow: true,
+						Label:       pointTo("Link1"),
+					},
+				},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{validNode1}, // invalidNode is excluded
+				Subgraphs: []*Flowchart{},      // Subgraphs with nil or empty titles are excluded
+				Links:     []Link{},            // Link involving invalid node is excluded
+			},
+		},
+		{
+			name: "Flowchart with mixed valid and invalid nodes and subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{validNode1, invalidNode},
+				Subgraphs: []*Flowchart{validSubgraph, invalidSubgraph},
+				Links: []Link{
+					{
+						Origin:      validNode1,
+						Target:      invalidNode,
+						LineType:    LineTypeSolid,
+						ArrowType:   ArrowTypeNormal,
+						OriginArrow: true,
+						TargetArrow: false,
+						Label:       pointTo("Link1"),
+					},
+					{
+						Origin:      invalidNode,
+						Target:      validNode1,
+						LineType:    LineTypeDotted,
+						ArrowType:   ArrowTypeCross,
+						OriginArrow: false,
+						TargetArrow: true,
+						Label:       pointTo("Link2"),
+					},
+				},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{validNode1},
+				Subgraphs: []*Flowchart{
+					{
+						Direction: validSubgraph.Direction,
+						Title:     validSubgraph.Title,
+						Nodes:     []*Node{validNode1},
+						Subgraphs: []*Flowchart{},
+						Links:     []Link{},
+					},
+				},
+				Links: []Link{}, // Links involving invalid nodes are excluded
+			},
+		},
+		{
+			name: "Flowchart with nested invalid subgraphs",
+			flowchart: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{},
+				Subgraphs: []*Flowchart{
+					{
+						Title:     &invalidTitle, // Invalid title
+						Direction: DirectionHorizontalRight,
+						Nodes:     []*Node{validNode2},
+						Subgraphs: []*Flowchart{
+							validSubgraph,
+						},
+						Links: []Link{},
+					},
+				},
+				Links: []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionVertical,
+				Title:     pointTo("MainFlowchart"),
+				Nodes:     []*Node{},
+				Subgraphs: []*Flowchart{}, // Invalid subgraphs are excluded
+				Links:     []Link{},
+			},
+		},
+		{
+			name: "Empty flowchart",
+			flowchart: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("EmptyFlowchart"),
+				Nodes:     []*Node{},
+				Subgraphs: []*Flowchart{},
+				Links:     []Link{},
+			},
+			expectedFlow: &Flowchart{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("EmptyFlowchart"),
+				Nodes:     []*Node{},
+				Subgraphs: []*Flowchart{},
+				Links:     []Link{},
+			},
+		},
+	}
+
+	// Execute tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := removeNonMermaidNames(tt.flowchart)
+			if diff := cmp.Diff(tt.expectedFlow, result, cmp.AllowUnexported(Node{}), cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("removeNonMermaidNames() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetMermaidFriendlyFlowchart(t *testing.T) {
+	// Define helper nodes
+	validNode1 := &Node{name: "ValidNode1", Type: NodeTypeProcess, Label: pointTo("Valid Node 1")}
+	validNode2 := &Node{name: "ValidNode2", Type: NodeTypeDecision, Label: pointTo("Valid Node 2")}
+	invalidNode := &Node{name: "Invalid@Node", Type: NodeTypeProcess, Label: pointTo("Invalid Node")}
+
+	firstLink := Link{
+		Origin:      validNode1,
+		Target:      validNode1,
+		LineType:    LineTypeSolid,
+		ArrowType:   ArrowTypeNormal,
+		OriginArrow: false,
+		TargetArrow: true,
+		Label:       nil,
+	}
+	secondLink := Link{
+		Origin:      validNode1,
+		Target:      validNode2,
+		LineType:    LineTypeDotted,
+		ArrowType:   ArrowTypeCross,
+		OriginArrow: false,
+		TargetArrow: true,
+		Label:       nil,
+	}
+
+	originalFlowchart := &Flowchart{
+		Direction: DirectionHorizontalLeft,
+		Title:     pointTo("graph title"),
+		Nodes:     []*Node{validNode1},
+		Subgraphs: []*Flowchart{
+			{
+				Direction: DirectionHorizontalRight,
+				Title:     pointTo("valid subgraph"),
+				Nodes:     []*Node{invalidNode},
+				Subgraphs: []*Flowchart{{
+					Direction: DirectionVertical,
+					Title:     nil,
+					Nodes:     []*Node{validNode2},
+					Subgraphs: nil,
+					Links:     []Link{secondLink},
+				}},
+				Links: nil,
+			},
+		},
+		Links: []Link{firstLink},
+	}
+
+	// Expected flowchart after processing
+	expectedFlowchart := &Flowchart{
+		Direction: DirectionHorizontalLeft,
+		Title:     pointTo("graph title"),
+		Nodes:     []*Node{validNode1},
+		Subgraphs: []*Flowchart{{
+			Title: pointTo("valid subgraph"),
+			Nodes: []*Node{validNode2},
+			Links: []Link{secondLink},
+		}},
+		Links: []Link{firstLink},
+	}
+
+	// Run the function
+	result := GetMermaidFriendlyFlowchart(originalFlowchart)
+
+	// Compare the result with the expected flowchart
+	if diff := cmp.Diff(expectedFlowchart, result, cmp.AllowUnexported(Node{}), cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("GetMermaidFriendlyFlowchart() mismatch (-expected +got):\n%s", diff)
 	}
 }
